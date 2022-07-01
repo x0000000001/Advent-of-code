@@ -1,4 +1,4 @@
-use day6::{result_1, result_2};
+use day14::{result_1, result_2};
 
 fn main() {
     println!("{}", result_1());
