@@ -73,9 +73,6 @@ fn count_blocks(moves: &Vec<(bool, Cuboïd)>) -> i64 {
     for i in 0..len {
         for j in (i+1)..len {
             intersections[j][i] = moves[i].1.intersection(moves[j].1);
-            // if let Some(c) = intersections[j][i]] {
-            //     intersections[i][j] = Some(c.clone());
-            // }
         }
     }
 
@@ -86,7 +83,6 @@ fn count_blocks(moves: &Vec<(bool, Cuboïd)>) -> i64 {
 
         // !!!!!!! TRICK IS HERE  !!!!!!!
         // we determine recursively the intersection zone of each move with previous moves
-        // f*** yeah I did this
         let mut new_moves: Vec<(bool, Cuboïd)> = vec![];
         for j in 0..i {
             if let Some(c) = intersections[i][j] {
