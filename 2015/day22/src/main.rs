@@ -1,4 +1,4 @@
-use day21::*;
+use day22::*;
 use std::time::Instant;
 use std::fs;
 
@@ -25,6 +25,28 @@ pub fn read_input(path: &str) -> InputType
     let input:Vec<String> = contents.lines().into_iter().map(|line| line.trim().to_owned()).collect();
 
     (input[0].split_whitespace().last().unwrap().parse().unwrap(), 
-    input[1].split_whitespace().last().unwrap().parse().unwrap(), 
-    input[2].split_whitespace().last().unwrap().parse().unwrap())
+    input[1].split_whitespace().last().unwrap().parse().unwrap())
+}
+
+
+#[allow(dead_code)]
+const TEST_INPUT_PATH: &str = "test_input.txt";
+
+#[cfg(test)]
+mod test 
+{
+    use super::*;
+
+    #[test]
+    fn test1()
+    {
+        assert_eq!(result_1(read_input(INPUT_PATH)), 0);
+    }
+
+    
+    #[test]
+    fn test2()
+    {
+        assert_eq!(result_2(read_input(INPUT_PATH)), 0);
+    }
 }
