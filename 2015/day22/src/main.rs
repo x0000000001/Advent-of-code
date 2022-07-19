@@ -27,26 +27,3 @@ pub fn read_input(path: &str) -> InputType
     (input[0].split_whitespace().last().unwrap().parse().unwrap(), 
     input[1].split_whitespace().last().unwrap().parse().unwrap())
 }
-
-
-#[allow(dead_code)]
-const TEST_INPUT_PATH: &str = "test_input.txt";
-
-#[cfg(test)]
-mod test 
-{
-    use super::*;
-
-    #[test]
-    fn test1()
-    {
-        assert_eq!(result_1(read_input(INPUT_PATH)), 0);
-    }
-
-    
-    #[test]
-    fn test2()
-    {
-        assert_eq!(result_2(read_input(INPUT_PATH)), 0);
-    }
-}
