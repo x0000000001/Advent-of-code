@@ -1,4 +1,5 @@
 use day11::*;
+use std::collections::HashMap;
 use std::time::Instant;
 use std::fs;
 
@@ -24,10 +25,12 @@ pub fn read_input(path: &str) -> InputType
 
     let input:Vec<String> = contents.lines().into_iter().map(|line| line.trim().to_owned()).collect();
 
-    let mut res: InputType = vec![];
+    let mut res: InputType = (vec![],0);
+    let mut names_to_u64: HashMap<String,u64> = HashMap::new();
+    let mut id = 0;
      
     for l in input {
-        let mut floor: Vec<(bool,String)> = vec![];
+        let mut floor: Vec<(bool,u64)> = vec![];
         let l = l.replace(",", "");
         let l = l.replace(".", "");
         let l = l.replace("and", "");
@@ -41,21 +44,31 @@ pub fn read_input(path: &str) -> InputType
 
         while i < w.len() {
             let is_microchip = w[i+1] == "microchip";
-            if is_microchip {
-                floor.push((is_microchip, 
+            let name = if is_microchip { 
                     w[i].split("-").
-                    collect::<Vec<&str>>()[0].to_string()));
+                    collect::<Vec<&str>>()[0].to_string()
             } else {
-                floor.push((is_microchip, w[i].to_string()));
-            }
+                w[i].to_string()
+            };
+
+            let id = if let Some(existing_id) = names_to_u64.get(&name) {
+                *existing_id
+            } else {
+                names_to_u64.insert(name, id);
+                id += 1;
+                id - 1
+            };
+
+            floor.push((is_microchip,id));
+
             i+=3
         }
 
-        res.push(floor);
+        res.0.push(floor);
     }
 
-    while res.len() != 4 {
-        res.push(vec![]);
+    while res.0.len() != 4 {
+        res.0.push(vec![]);
     }
 
     res
@@ -75,7 +88,6 @@ mod test
     {
         assert_eq!(result_1(read_input(TEST_INPUT_PATH)), 11);
     }
-
     
     #[test]
     fn test2()
