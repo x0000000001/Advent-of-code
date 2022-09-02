@@ -1,4 +1,4 @@
-use day8::*;
+use day2::*;
 use std::time::Instant;
 
 const INPUT_PATH: &str = "input.txt";
