@@ -1,16 +1,38 @@
 use std::fs;
 
-pub type InputType = Vec<String>;
+pub type InputType = Vec<Vec<i64>>;
 
-pub fn result_1(_input: InputType) -> i64
+pub fn result_1(input: InputType) -> i64
 {
-    0
+    let mut sum = 0;
+
+    for l in input {
+        sum += l.iter().max().unwrap() - l.iter().min().unwrap();
+    }
+
+    sum
 }
 
 
-pub fn result_2(_input: InputType) -> i64
+pub fn result_2(input: InputType) -> i64
 {   
-    0
+    let mut sum = 0;
+
+    'line_loop: for l in input {
+        for i in 0..l.len() {
+            for j in 0..l.len() {
+                if i == j {
+                    continue;
+                }
+                if l[i]%l[j] == 0 {
+                    sum += l[i]/l[j];
+                    continue 'line_loop;
+                }
+            }
+        }
+    }
+
+    sum
 }
 
 pub fn read_input(path: &str) -> InputType
@@ -20,7 +42,13 @@ pub fn read_input(path: &str) -> InputType
 
     let input:Vec<String> = contents.lines().into_iter().map(|line| line.trim().to_owned()).collect();
 
-    input
+    let mut res: InputType = vec![vec![];input.len()];
+
+    for i in 0..input.len() {
+        res[i] = input[i].split_whitespace().map(|str| str.parse().unwrap()).collect();
+    }
+
+    res
 }
 
 #[allow(dead_code)]
