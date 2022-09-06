@@ -1,0 +1,13 @@
+a (1) -> aa, ab, ac
+aa (7) -> aaa, aab, aac
+ab (5) -> aba, abb, abc
+ac (3) -> aca, acb, acc
+aaa (1)
+aab (1)
+aac (1)
+aba (2)
+abb (2)
+abc (1)
+aca (1)
+acb (3)
+acc (3)
