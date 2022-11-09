@@ -1,8 +1,9 @@
 target/
 Cargo.lock
 day0/
-template/
+rsut/template/
 rust/new_day.sh
+js/template
 *.swn
 *.swo
 *.swp
