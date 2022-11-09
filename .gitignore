@@ -2,4 +2,8 @@ target/
 Cargo.lock
 day0/
 template/
+rust/new_day.sh
+*.swn
+*.swo
+*.swp
 
