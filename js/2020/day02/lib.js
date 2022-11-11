@@ -1,29 +1,36 @@
 import { benchmark, test } from "./main.js";
 
+export const format = (lines) => {
+  return lines.map((line) => {
+    let words = line.split(" ");
+    let min_max = words[0].split("-").map((v) => parseInt(v));
+    return {
+      min: min_max[0],
+      max: min_max[1],
+      letter: words[1].charAt(0),
+      password: words[2],
+    };
+  });
+};
+
+const is_valid0 = ({ min, max, letter, password }) => {
+  let count = Array.from(password).filter((c) => c == letter).length;
+  return count >= min && count <= max;
+};
+
 const f0 = (input) => {
-  for (let i = 0; i < input.length; i++) {
-    let v0 = input[i];
-    for (let j = i + 1; j < input.length; j++) {
-      if (v0 + input[j] == 2020) {
-        return v0 * input[j];
-      }
-    }
-  }
+  return input.filter(is_valid0).length;
+};
+
+const is_valid1 = ({ min, max, letter, password }) => {
+  let isPresent0 = password.charAt(min - 1) == letter;
+  let isPresent1 = password.charAt(max - 1) == letter;
+  return (!isPresent0 && isPresent1) || (isPresent0 && !isPresent1);
 };
 
 const f1 = (input) => {
-  for (let i = 0; i < input.length; i++) {
-    let v0 = input[i];
-    for (let j = i + 1; j < input.length; j++) {
-      let v1 = input[j];
-      for (let k = j + 1; k < input.length; k++) {
-        if (v0 + input[j] + input[k] == 2020) {
-          return v0 * v1 * input[k];
-        }
-      }
-    }
-  }
+  return input.filter(is_valid1).length;
 };
 
-test(f0, f1, 514579, 241861950);
+test(f0, f1, 2, 1);
 benchmark(f0, f1);
