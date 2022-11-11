@@ -4,6 +4,7 @@ day0/
 rsut/template/
 rust/new_day.sh
 js/template
+js/day
 *.swn
 *.swo
 *.swp

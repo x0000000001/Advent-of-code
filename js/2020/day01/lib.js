@@ -1,5 +1,9 @@
 import { benchmark, test } from "./main.js";
 
+export const format = (lines) => {
+  return lines.map((v) => parseInt(v));
+};
+
 const f0 = (input) => {
   for (let i = 0; i < input.length; i++) {
     let v0 = input[i];

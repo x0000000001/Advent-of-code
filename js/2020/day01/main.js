@@ -1,9 +1,6 @@
 import { readFileSync } from "fs";
 import { performance } from "perf_hooks";
-
-const format = (lines) => {
-  return lines.map((v) => parseInt(v));
-};
+import { format } from "./lib.js";
 
 const get_lines = (name) => {
   const contents = readFileSync(name, "utf-8");
