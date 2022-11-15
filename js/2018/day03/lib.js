@@ -3,9 +3,9 @@ import { benchmark, test } from "./main.js";
 class Square {
   constructor(x_top_left, y_top_left, width, height) {
     this.x0 = x_top_left;
-    this.x1 = x_top_left + width;
+    this.x1 = x_top_left + width - 1;
     this.y0 = y_top_left;
-    this.y1 = y_top_left + height;
+    this.y1 = y_top_left + height - 1;
     this.width = width;
     this.height = height;
   }
@@ -39,7 +39,7 @@ class Square {
 
 const get_request = (line) => {
   let w = line.split(" ");
-  let id = parseInt(w(0).substring(1));
+  let id = parseInt(w[0].substring(1));
   let [x, y] = w[2]
     .substring(0, w[2].length - 1)
     .split(",")
@@ -47,45 +47,70 @@ const get_request = (line) => {
 
   let [width, height] = w[3].split("x").map((x) => parseInt(x));
 
-  return [id, new Square(x, y, width, height)];
+  return new Square(x, y, width, height);
 };
 
 export const format = (lines) => {
   return lines.map(get_request);
 };
 
-const get_intersections = (squares) => {
-  if (squares.isEmpty()) {
-    return { area: 0, intersections: [] };
+const get_area = (squares) => {
+  if (squares.length === 0) {
+    return 0;
   }
 
-  let current = squares[0];
-  let remaining = squares.slice(1);
+  const current = squares[0];
+  const others = squares.slice(1);
 
-  let inters_with_current = get_intersections(
-    remaining.map(current.intersection)
-  );
-  let inters_of_remaining = get_intersections(remaining);
-  let recurrent_inters = get_intersections(
-    inters_with_current[intersections].concat(
-      inters_of_remaining[intersections]
-    )
-  );
+  const area_others = get_area(others);
+  const intersections = others
+    .map((sq) => current.intersection(sq))
+    .filter((sq) => sq !== null);
+  const area_intersections = get_area(intersections);
 
-  return;
+  return area_others + current.area - area_intersections;
 };
 
 const f0 = (input) => {
-  return 0;
+  let inters = [];
+  for (let i = 0; i < input.length; i++) {
+    const x = input[i];
+    for (let j = i + 1; j < input.length; j++) {
+      const y = input[j];
+      const inter = x.intersection(y);
+      if (inter !== null) {
+        inters.push(inter);
+      }
+    }
+  }
+  return get_area(inters);
 };
 
 const f1 = (input) => {
-  return 0;
+  for (let i = 0; i < input.length; i++) {
+    const x = input[i];
+    let has_collide = false;
+    for (let j = 0; j < input.length; j++) {
+      if (i === j) {
+        continue;
+      }
+      const y = input[j];
+      if (x.intersection(y) !== null) {
+        has_collide = true;
+        break;
+      }
+    }
+
+    if (!has_collide) {
+      return i + 1;
+    }
+  }
 };
 
 test([
+  { f: get_area, expected: 32 },
   { f: f0, expected: 4 },
-  { f: f1, expected: 0 },
+  { f: f1, expected: 3 },
 ]);
 
-// benchmark(f0, f1);
+benchmark(f0, f1);
