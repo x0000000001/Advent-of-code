@@ -4,13 +4,13 @@ My codes for the challenges of adventofcode.com
 
 ## Which year in which language ?
 
-*2015* **Rust**
-*2016* **Rust**
-*2017* **Rust**
-*2018* **JavaScript/TypeScript**
-*2019* **JavaScript/TypeScript**
-*2020* **JavaScript/TypeScript**
-*2021* **Rust**
+*2015* **Rust** \
+*2016* **Rust** \ \
+*2017* **Rust** \
+*2018* **JavaScript/TypeScript** \
+*2019* **JavaScript/TypeScript** \
+*2020* **JavaScript/TypeScript** \
+*2021* **Rust** \
 *2022*
 
 ## Challenges that have caused me some problems/ that I have failed to do alone :
