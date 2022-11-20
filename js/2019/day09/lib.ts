@@ -1,10 +1,10 @@
 import { benchmark, test } from "./main.js";
 
-type InputType = { [index: number]: number };
+type InputType = { [index: number]: bigint };
 
 export const format = (lines: string[]): InputType => {
   let instrs: InputType = {};
-  lines[0].split(",").forEach((c, i) => (instrs[i] = parseInt(c)));
+  lines[0].split(",").forEach((c, i) => (instrs[i] = BigInt(c)));
   return instrs;
 };
 
@@ -18,99 +18,108 @@ export const format = (lines: string[]): InputType => {
  */
 const run_instrs = (
   instrs: InputType,
-  inputs: number[],
-  i = 0,
-  relative_base = 0
-): [number, number[], number] => {
+  inputs: bigint[],
+  i: number = 0,
+  relative_base: number = 0
+): [number, bigint[], number] => {
   let output = [];
   let input_index = 0;
   while (true) {
-    let cmd = instrs[i] | 0;
+    let cmd: bigint = instrs[i] === undefined ? 0n : instrs[i];
     let cmd_string: string = cmd.toString();
-    let parameters = [null, null, null];
+    let parameters: bigint[] = [null, null, null];
+    let parameters_as_pointers: number[] = [null, null, null];
     for (let j = 0; j < 3; j++) {
-      let mode = 0;
+      let mode: number = 0;
       if (cmd_string.length > 2 + j) {
         mode = parseInt(cmd_string.charAt(cmd_string.length - (3 + j)));
       }
-      let val = instrs[i + 1 + j] | 0;
+      let val_as_pointer: number =
+        instrs[i + 1 + j] === undefined ? 0 : Number(instrs[i + 1 + j]);
       switch (mode) {
         case 0:
-          parameters[j] = instrs[val] | 0;
+          parameters[j] =
+            instrs[val_as_pointer] === undefined ? 0n : instrs[val_as_pointer];
+          parameters_as_pointers[j] = val_as_pointer;
           break;
         case 1:
-          parameters[j] = val;
+          parameters[j] = instrs[i + 1 + j];
           break;
         case 2:
-          parameters[j] = instrs[relative_base + val] | 0;
+          parameters[j] =
+            instrs[relative_base + val_as_pointer] === undefined
+              ? 0n
+              : instrs[relative_base + val_as_pointer];
+          parameters_as_pointers[j] = val_as_pointer + relative_base;
           break;
       }
     }
-    cmd = cmd % 100;
+    cmd %= 100n;
+
     switch (cmd) {
-      case 1:
-        instrs[instrs[i + 3] | 0] = parameters[0] + parameters[1];
+      case 1n:
+        instrs[parameters_as_pointers[2]] = parameters[0] + parameters[1];
         i += 4;
         break;
 
-      case 2:
-        instrs[instrs[i + 3] | 0] = parameters[0] * parameters[1];
+      case 2n:
+        instrs[parameters_as_pointers[2]] = parameters[0] * parameters[1];
         i += 4;
         break;
 
-      case 99:
+      case 99n:
         return [null, output, relative_base];
 
-      case 3:
+      case 3n:
         if (input_index == inputs.length) {
           return [i, output, relative_base];
         }
-        instrs[instrs[i + 1] | 0] = inputs[input_index];
+        instrs[parameters_as_pointers[0]] = inputs[input_index];
         input_index++;
         i += 2;
         break;
 
-      case 4:
+      case 4n:
         output.push(parameters[0]);
         i += 2;
         break;
 
-      case 5:
-        if (parameters[0] !== 0) {
-          i = parameters[1];
+      case 5n:
+        if (parameters[0] !== 0n) {
+          i = Number(parameters[1]);
         } else {
           i += 3;
         }
         break;
 
-      case 6:
-        if (parameters[0] === 0) {
-          i = parameters[1];
+      case 6n:
+        if (parameters[0] === 0n) {
+          i = Number(parameters[1]);
         } else {
           i += 3;
         }
         break;
 
-      case 7:
+      case 7n:
         if (parameters[0] < parameters[1]) {
-          instrs[instrs[i + 3] | 0] = 1;
+          instrs[parameters_as_pointers[2]] = 1n;
         } else {
-          instrs[instrs[i + 3] | 0] = 0;
+          instrs[parameters_as_pointers[2]] = 0n;
         }
         i += 4;
         break;
 
-      case 8:
+      case 8n:
         if (parameters[0] === parameters[1]) {
-          instrs[instrs[i + 3] | 0] = 1;
+          instrs[parameters_as_pointers[2]] = 1n;
         } else {
-          instrs[instrs[i + 3] | 0] = 0;
+          instrs[parameters_as_pointers[2]] = 0n;
         }
         i += 4;
         break;
 
-      case 9:
-        relative_base += parameters[0];
+      case 9n:
+        relative_base += Number(parameters[0]);
         i += 2;
         break;
 
@@ -121,12 +130,19 @@ const run_instrs = (
 };
 
 const f0 = (instrs) => {
-  let res = run_instrs(instrs, [1]);
+  let res = run_instrs(instrs, [1n]);
+  if (res[0] !== null) {
+    console.log("programm didn't finish");
+  }
   return res[1];
 };
 
-const f1 = (input) => {
-  return 0;
+const f1 = (instrs) => {
+  let res = run_instrs(instrs, [2n]);
+  if (res[0] !== null) {
+    console.log("programm didn't finish");
+  }
+  return res[1];
 };
 
 test([
