@@ -153,11 +153,17 @@ const f0 = (instrs) => {
   };
 
   while (machine_state.i !== null) {
-    machine_state.inputs.push(BigInt(visited[pos.x * 100000 + pos.y]) | 0n);
+    machine_state.inputs.push(BigInt(visited[pos.x * 100000 + pos.y] | 0));
 
     run_instrs(machine_state);
     let paint_color: number = Number(machine_state.outputs.shift());
+    if (paint_color !== 0 && paint_color !== 1) {
+      throw `wrong paint color : ${paint_color}`;
+    }
     let rotation: number = Number(machine_state.outputs.shift());
+    if (rotation !== 0 && rotation !== 1) {
+      throw `wrong paint color : ${rotation}`;
+    }
 
     visited[pos.x * 100000 + pos.y] = paint_color;
     facing = (facing + (rotation * 2 - 1) + 4) % 4;
@@ -180,7 +186,96 @@ const f0 = (instrs) => {
   return Object.keys(visited).length;
 };
 
-const f1 = (input) => {
+const print_grid = (visited: { [key: number]: number }) => {
+  const points: [Position, number][] = [];
+  for (const key in visited) {
+    let keyn = parseInt(key);
+    let y_factor = 1;
+    if (keyn % 100000 > 50000) {
+      keyn += 2 * (100000 - (keyn % 100000));
+      y_factor = -1;
+    }
+    points.push([
+      new Position(
+        (keyn - (keyn % 100000)) / 100000,
+        (keyn % 100000) * y_factor
+      ),
+      visited[key],
+    ]);
+  }
+
+  const [xmax, ymax, xmin, ymin] = points.reduce(
+    ([xmax, ymax, xmin, ymin], [p, _]) => [
+      Math.max(xmax, p.x),
+      Math.max(ymax, p.y),
+      Math.min(xmin, p.x),
+      Math.min(ymin, p.y),
+    ],
+    [0, 0, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER]
+  );
+
+  const [width, height] = [xmax - xmin + 1, ymax - ymin + 1];
+  let grid = Array.from({ length: width }, () => new Array(height).fill(0));
+
+  for (let k = 0; k < points.length; k++) {
+    const [p, val] = points[k];
+    grid[p.x - xmin][p.y - ymin] = val;
+  }
+
+  for (let i = 0; i < width; i++) {
+    let line = "";
+    for (let j = 0; j < height; j++) {
+      line += grid[i][j] == 1 ? "#" : ".";
+    }
+    console.log(line);
+  }
+};
+
+const f1 = (instrs) => {
+  let pos = new Position(0, 0);
+  let visited = { 0: 1 };
+  let facing = 0;
+  let machine_state = {
+    instrs,
+    inputs: [],
+    i: 0,
+    outputs: [],
+    relative_base: 0,
+  };
+
+  while (machine_state.i !== null) {
+    machine_state.inputs.push(BigInt(visited[pos.x * 100000 + pos.y] | 0));
+
+    run_instrs(machine_state);
+    let paint_color: number = Number(machine_state.outputs.shift());
+    if (paint_color !== 0 && paint_color !== 1) {
+      throw `wrong paint color : ${paint_color}`;
+    }
+    let rotation: number = Number(machine_state.outputs.shift());
+    if (rotation !== 0 && rotation !== 1) {
+      throw `wrong paint color : ${rotation}`;
+    }
+
+    visited[pos.x * 100000 + pos.y] = paint_color;
+    facing = (facing + (rotation * 2 - 1) + 4) % 4;
+    switch (facing) {
+      case 0:
+        pos.y++;
+        break;
+      case 1:
+        pos.x++;
+        break;
+      case 2:
+        pos.y--;
+        break;
+      case 3:
+        pos.x--;
+        break;
+    }
+  }
+
+  print_grid(visited);
+
   return 0;
 };
 
