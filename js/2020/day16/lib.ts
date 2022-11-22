@@ -3,16 +3,17 @@ import { benchmark, test } from "./main.js";
 export const format = (lines: string[]) => {
   let rules = [];
   let i = 0;
-  let words = lines[0].split(" ");
-  while (words[1].slice(0, 6) != "ticket") {
+  while (!lines[i].startsWith("your")) {
+    let words = lines[i].split(": ");
+    let temp = words[1].split(" ");
+
     rules.push([
-      lines[i].split(":")[0],
-      words[1].split("-").map((x) => parseInt(x)),
-      words[3].split("-").map((x) => parseInt(x)),
+      words[0],
+      temp[0].split("-").map((x) => parseInt(x)),
+      temp[2].split("-").map((x) => parseInt(x)),
     ]);
 
     i++;
-    words = lines[i].split(" ");
   }
 
   i++;
@@ -30,7 +31,7 @@ export const format = (lines: string[]) => {
 
 const follows_rule = (
   value: number,
-  [_, [min0, max0], [min1, max1]]
+  [_, [min0, max0], [min1, max1]]: [string, [number, number], [number, number]]
 ): boolean => {
   return (value >= min0 && value <= max0) || (value >= min1 && value <= max1);
 };
@@ -73,28 +74,52 @@ const get_possible_fields_indexes = (value: number, rules): number[] => {
   return possible_fields_indexes;
 };
 
-const f1 = ([rules, personnal_ticket, tickets]) => {
-  tickets = tickets.filter((t) => get_invalid_fields(t, rules).length === 0);
-  let field_indexes: Set<number>[] = Array.from(
-    { length: rules.length },
-    () => {
-      let s = new Set<number>();
-      for (let i = 0; i < rules.length; i++) {
-        s.add(i);
-      }
-      return s;
-    }
-  );
-  let determined_count = 0;
+const f1 = ([fields, personnal_ticket, tickets]) => {
+  tickets = tickets.filter((t) => get_invalid_fields(t, fields).length === 0);
+  let possibilities: [number, Set<number>][] = Array.from({
+    length: fields.length,
+  }).map((_, original_index) => [
+    original_index,
+    new Set(
+      Array.from({ length: fields.length })
+        .map((_, candidate_index) => {
+          for (
+            let ticket_index = 0;
+            ticket_index < tickets.length;
+            ticket_index++
+          ) {
+            let t = tickets[ticket_index][candidate_index];
+            let f = fields[original_index];
+            if (
+              !follows_rule(
+                tickets[ticket_index][candidate_index],
+                fields[original_index]
+              )
+            ) {
+              return null;
+            }
+          }
+          return candidate_index;
+        })
+        .filter((x) => x !== null)
+    ),
+  ]);
 
-  for (let ticket_index = 0; ticket_index < tickets.length; ticket_index++) {
-    for (let rule_index = 0; rule_index < rules.length; rule_index++) {}
-  }
+  let used = new Set();
+  possibilities = possibilities
+    .sort(([indexa, a], [indexb, b]) => a.size - b.size)
+    .filter(([_, s]) => s.size != 0);
+  return possibilities
+    .map(([original_index, possibilities]) => {
+      const used_index: number = [...possibilities].filter(
+        (x) => !used.has(x)
+      )[0];
+      // let y = [...possibilities].filter((x) => !used.has(x));
+      // console.log(used_index, y, original_index);
+      used.add(used_index);
 
-  return rules
-    .map(([name, mm0, mm1], i) => {
-      if (name.slice(0, 9) === "departure") {
-        return personnal_ticket[field_indexes[i].values().next().value];
+      if (fields[original_index][0].startsWith("departure")) {
+        return personnal_ticket[used_index];
       } else {
         return 1;
       }
@@ -102,9 +127,12 @@ const f1 = ([rules, personnal_ticket, tickets]) => {
     .reduce((a, b) => a * b, 1);
 };
 
+// 1970155307291 too low
+// 4805792588689 too high
+
 test([
   { f: f0, expected: 71 },
-  { f: f1, expected: 1 },
+  // { f: f1, expected: 1 },
 ]);
 
 benchmark(f0, f1);
