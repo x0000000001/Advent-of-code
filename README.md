@@ -23,4 +23,6 @@ My codes for the challenges of adventofcode.com
 
 2018::03 : 4th time on the squares overlapping problem. I must still miss an important optimization (20s to compute overlapping area...).
 
-2020::17 : not hard, BUT custom equality doesn't exist in js for sets : it is an equality of pointers. This is exhausting.
+2020::17 : Not hard, BUT custom equality doesn't exist in js for sets : it is an equality of pointers. This is exhausting.
+
+2020::19 : My code for part 2 is... not supposed to work ? (it should not avoid infinite loops...)
