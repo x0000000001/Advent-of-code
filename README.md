@@ -22,3 +22,5 @@ My codes for the challenges of adventofcode.com
 2015::24 : Interesting optimizations
 
 2018::03 : 4th time on the squares overlapping problem. I must still miss an important optimization (20s to compute overlapping area...).
+
+2020 : 17 : not hard, BUT custom equality doesn't exist in js for sets : it is an equality of pointers. This is exhausting.
