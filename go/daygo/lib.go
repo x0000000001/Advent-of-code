@@ -1,6 +1,6 @@
 package main
 
-type InputType = []string
+type InputType []string
 type RetType = int
 
 func format(lines []string) InputType {
