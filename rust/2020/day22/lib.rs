@@ -40,8 +40,8 @@ fn rec_game(
         let max0 = *p0.iter().max().unwrap();
         let max1 = *p1.iter().max().unwrap();
 
-        if max1 > max0 && max1 > p0.len() + p1.len() - 2 {
-            return (1, 2);
+        if max0 > max1 && max0 > p0.len() + p1.len() {
+            return (0, 0);
         }
     }
 
@@ -60,11 +60,14 @@ fn rec_game(
 
         let c0 = p0.pop_front().unwrap();
         let c1 = p1.pop_front().unwrap();
-
         let winner;
 
         if c0 <= p0.len() && c1 <= p1.len() {
-            (winner, _) = rec_game(p0.clone(), p1.clone(), false);
+            let new_deck0 = p0.range(0..c0).copied().collect();
+            let new_deck1 = p1.range(0..c1).copied().collect();
+
+            let res = rec_game(new_deck0, new_deck1, false);
+            winner = res.0;
         } else {
             winner = if c0 > c1 { 0 } else { 1 };
         }
@@ -82,7 +85,7 @@ fn rec_game(
         }
     }
 
-    (1, if is_main_game { score(&p1) } else { 2 })
+    (0, if is_main_game { score(&p0) } else { 0 })
 }
 
 pub fn result_2((p0, p1): InputType) -> i64 {
