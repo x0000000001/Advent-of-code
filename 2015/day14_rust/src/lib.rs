@@ -9,13 +9,18 @@ pub struct Reindeer {
     rest_time: i64,
     distance_travelled: i64,
     fly_time_remaining: i64,
-    rest_time_remaining: i64
+    rest_time_remaining: i64,
 }
 
 impl Reindeer {
     pub fn create(speed: i64, fly_time: i64, rest_time: i64) -> Reindeer {
-        Reindeer { speed, fly_time, rest_time, 
-            distance_travelled: 0, fly_time_remaining: fly_time, rest_time_remaining: 0
+        Reindeer {
+            speed,
+            fly_time,
+            rest_time,
+            distance_travelled: 0,
+            fly_time_remaining: fly_time,
+            rest_time_remaining: 0,
         }
     }
 
@@ -41,30 +46,35 @@ impl Reindeer {
     }
 }
 
-pub fn result_1(mut input: InputType) -> i64
-{
+pub fn result_1(mut input: InputType) -> i64 {
     for _ in 0..2503 {
-        for (_,r) in input.iter_mut() {
+        for (_, r) in input.iter_mut() {
             r.step();
         }
     }
 
-    input.iter().map(|(_,r)| r.distance_travelled).max().unwrap()
+    input
+        .iter()
+        .map(|(_, r)| r.distance_travelled)
+        .max()
+        .unwrap()
 }
 
-
-pub fn result_2(mut input: InputType) -> i64
-{   
+pub fn result_2(mut input: InputType) -> i64 {
     let mut scores: HashMap<String, i64> = HashMap::new();
 
     for _ in 0..2503 {
-        for (_,r) in input.iter_mut() {
+        for (_, r) in input.iter_mut() {
             r.step();
         }
 
-        let max = input.iter().map(|(_,r)| r.distance_travelled).max().unwrap();
+        let max = input
+            .iter()
+            .map(|(_, r)| r.distance_travelled)
+            .max()
+            .unwrap();
 
-        for (n,r) in input.iter() {
+        for (n, r) in input.iter() {
             if r.distance_travelled == max {
                 let accessor = scores.entry(n.clone()).or_insert(0);
                 *accessor += 1;
@@ -72,5 +82,5 @@ pub fn result_2(mut input: InputType) -> i64
         }
     }
 
-    scores.into_iter().map(|(n,s)| s).max().unwrap()
+    scores.into_iter().map(|(n, s)| s).max().unwrap()
 }
