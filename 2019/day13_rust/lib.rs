@@ -1,13 +1,13 @@
 use std::{collections::HashMap, fs};
 
-pub type InputType = Vec<i64>;
+pub type InputType = Vec<i128>;
 
 struct Prg {
-    i: i64,
-    relative_base: i64,
-    instrs: HashMap<usize, i64>,
-    inputs: Vec<i64>,
-    outputs: Vec<i64>,
+    i: i128,
+    relative_base: i128,
+    instrs: HashMap<usize, i128>,
+    inputs: Vec<i128>,
+    outputs: Vec<i128>,
 }
 
 #[derive(Clone, Copy)]
@@ -18,26 +18,37 @@ enum Mode {
 }
 
 impl Prg {
-    fn eval_i(&self, i: i64, m: Mode) -> i64 {
+    fn eval_i(&self, i: i128, m: Mode) -> i128 {
         match m {
-            Mode::Immediate => i,
-            Mode::Position => self.instrs[&(i as usize)],
-            Mode::Relative => self.instrs[&((i + self.relative_base) as usize)],
+            Mode::Immediate => self.get(i),
+            Mode::Position => self.get(self.get(i)),
+            Mode::Relative => self.get(self.get(i) + self.relative_base),
         }
     }
 
-    fn get(&self, i: i64) -> i64 {
+    fn get(&self, i: i128) -> i128 {
         *self.instrs.get(&(i as usize)).or(Some(&0)).unwrap()
     }
 
-    fn set(&mut self, i: i64, val: i64) {
-        let entry = self.instrs.entry(i as usize).or_insert(0);
-        *entry = val;
+    fn set(&mut self, i: i128, val: i128, mode: Mode) {
+        match mode {
+            Mode::Position | Mode::Immediate => {
+                let entry = self.instrs.entry(i as usize).or_insert(0);
+                *entry = val;
+            }
+            Mode::Relative => {
+                let entry = self
+                    .instrs
+                    .entry((i + self.relative_base) as usize)
+                    .or_insert(0);
+                *entry = val;
+            }
+        }
     }
 }
 
 fn run_intcode(prg: &mut Prg) {
-    while prg.i >= 0 && prg.i < prg.instrs.len() as i64 {
+    while prg.i >= 0 && prg.i < prg.instrs.len() as i128 {
         let instr = prg.get(prg.i);
         let code = instr % 100;
         let modes_str = if instr > 100 {
@@ -45,13 +56,13 @@ fn run_intcode(prg: &mut Prg) {
         } else {
             "".to_string()
         };
-        let mut modes: Vec<Mode> = vec![Mode::Immediate; 3];
+        let mut modes: Vec<Mode> = vec![Mode::Position; 3];
         let args = [prg.get(prg.i + 1), prg.get(prg.i + 2), prg.get(prg.i + 3)];
 
         for (i, c) in modes_str.chars().rev().enumerate() {
             modes[i] = match c {
-                '0' => Mode::Immediate,
-                '1' => Mode::Position,
+                '0' => Mode::Position,
+                '1' => Mode::Immediate,
                 '2' => Mode::Relative,
                 _ => panic!(),
             }
@@ -64,6 +75,7 @@ fn run_intcode(prg: &mut Prg) {
                 prg.set(
                     args[2],
                     prg.eval_i(prg.i + 1, modes[0]) + prg.eval_i(prg.i + 2, modes[1]),
+                    modes[2],
                 );
                 prg.i += 4;
             }
@@ -72,13 +84,14 @@ fn run_intcode(prg: &mut Prg) {
                 prg.set(
                     args[2],
                     prg.eval_i(prg.i + 1, modes[0]) * prg.eval_i(prg.i + 2, modes[1]),
+                    modes[2],
                 );
                 prg.i += 4;
             }
             3 => {
                 // input
                 if let Some(x) = prg.inputs.pop() {
-                    prg.set(args[0], x);
+                    prg.set(args[0], x, modes[0]);
                 } else {
                     return;
                 }
@@ -92,7 +105,7 @@ fn run_intcode(prg: &mut Prg) {
             5 => {
                 // jump if not 0
                 if prg.eval_i(prg.i + 1, modes[0]) != 0 {
-                    prg.i += prg.eval_i(prg.i + 2, modes[1])
+                    prg.i = prg.eval_i(prg.i + 2, modes[1])
                 } else {
                     prg.i += 3
                 }
@@ -100,7 +113,7 @@ fn run_intcode(prg: &mut Prg) {
             6 => {
                 // jump if 0
                 if prg.eval_i(prg.i + 1, modes[0]) == 0 {
-                    prg.i += prg.eval_i(prg.i + 2, modes[1])
+                    prg.i = prg.eval_i(prg.i + 2, modes[1])
                 } else {
                     prg.i += 3
                 }
@@ -108,18 +121,18 @@ fn run_intcode(prg: &mut Prg) {
             7 => {
                 // is less than
                 if prg.eval_i(prg.i + 1, modes[0]) < prg.eval_i(prg.i + 2, modes[1]) {
-                    prg.set(args[2], 1);
+                    prg.set(args[2], 1, modes[2]);
                 } else {
-                    prg.set(args[2], 0);
+                    prg.set(args[2], 0, modes[2]);
                 }
                 prg.i += 4;
             }
             8 => {
                 // is equal
                 if prg.eval_i(prg.i + 1, modes[0]) == prg.eval_i(prg.i + 2, modes[1]) {
-                    prg.set(args[2], 1);
+                    prg.set(args[2], 1, modes[2]);
                 } else {
-                    prg.set(args[2], 0);
+                    prg.set(args[2], 0, modes[2]);
                 }
                 prg.i += 4;
             }
@@ -128,7 +141,7 @@ fn run_intcode(prg: &mut Prg) {
                 prg.relative_base += prg.eval_i(prg.i + 1, modes[0]);
                 prg.i += 2;
             }
-            _ => panic!(),
+            _ => panic!("wrong code : {code}"),
         }
     }
 }
@@ -137,22 +150,116 @@ pub fn result_1(input: InputType) -> i64 {
     let instrs = input
         .into_iter()
         .enumerate()
-        .collect::<HashMap<usize, i64>>();
+        .collect::<HashMap<usize, i128>>();
     let mut prg = Prg {
         i: 0,
         relative_base: 0,
         instrs,
-        inputs: Vec::new(),
+        inputs: Vec::from([2]),
         outputs: Vec::new(),
     };
     run_intcode(&mut prg);
-    println!("{:?}", prg.outputs);
 
-    0
+    prg.outputs
+        .into_iter()
+        .enumerate()
+        .filter(|&(i, x)| i % 3 == 2 && x == 2)
+        .count() as i64
 }
 
 pub fn result_2(input: InputType) -> i64 {
-    0
+    let mut instrs = input
+        .into_iter()
+        .enumerate()
+        .collect::<HashMap<usize, i128>>();
+
+    instrs.insert(0, 2);
+
+    let mut prg = Prg {
+        i: 0,
+        relative_base: 0,
+        instrs,
+        inputs: Vec::from([]),
+        outputs: Vec::new(),
+    };
+
+    run_intcode(&mut prg);
+
+    let mut current_paddle_x = -1;
+    let mut current_paddle_y = -1;
+    let mut current_ball_x = -1;
+    let mut current_ball_y = -1;
+    let mut current_score = -1;
+
+    for k in 0..(prg.outputs.len() / 3) {
+        let i = 3 * k;
+        match prg.outputs[i + 2] {
+            3 => {
+                current_paddle_x = prg.outputs[i];
+                current_paddle_y = prg.outputs[i + 1];
+            }
+            4 => {
+                current_ball_x = prg.outputs[i];
+                current_ball_y = prg.outputs[i + 1];
+            }
+            _ => (),
+        }
+    }
+
+    let mut remaining_blocks_count = prg
+        .outputs
+        .iter()
+        .enumerate()
+        .filter(|&(i, &x)| i % 3 == 2 && x == 2)
+        .count();
+
+    while remaining_blocks_count > 0 {
+        // println!(
+        //     "ball : {} {}\npaddle: {} {}\nremaining blocks: {}",
+        //     current_ball_x,
+        //     current_ball_y,
+        //     current_paddle_x,
+        //     current_paddle_y,
+        //     remaining_blocks_count
+        // );
+        let inputs = Vec::from([if current_paddle_x < current_ball_x {
+            1
+        } else if current_paddle_x > current_ball_x {
+            -1
+        } else {
+            0
+        }]);
+
+        prg.outputs = Vec::new();
+        prg.inputs = inputs;
+
+        run_intcode(&mut prg);
+
+        for k in 0..(prg.outputs.len() / 3) {
+            let i = 3 * k;
+            if (prg.outputs[i], prg.outputs[i + 1]) == (-1, 0) {
+                current_score = prg.outputs[i + 2];
+                remaining_blocks_count -= 1;
+                continue;
+            }
+
+            match prg.outputs[i + 2] {
+                3 => {
+                    current_paddle_x = prg.outputs[i];
+                    current_paddle_y = prg.outputs[i + 1];
+                }
+                4 => {
+                    current_ball_x = prg.outputs[i];
+                    current_ball_y = prg.outputs[i + 1];
+                }
+                _ => (),
+            }
+        }
+    }
+
+    // println!("{:?}", prg.outputs);
+
+    current_score as i64
 }
 
 pub fn read_input(path: &str) -> InputType {
