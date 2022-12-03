@@ -1,3 +1,4 @@
+use core::panic;
 use std::{
     collections::{HashMap, HashSet},
     fs,
@@ -149,108 +150,13 @@ fn run_intcode(prg: &mut Prg) {
     }
 }
 
-// coming from position is put in head, to be tested lastly
-fn possible_moves(x: i64, y: i64, oldx: i64, oldy: i64, walls: &HashSet<(i64, i64)>) -> Vec<i128> {
-    let mut moves = vec![];
-
-    for (mov, (candx, candy)) in [
-        (1, (x, y - 1)),
-        (3, (x + 1, y)),
-        (2, (x, y + 1)),
-        (4, (x - 1, y)),
-    ] {
-        if candx == oldx && candy == oldy {
-            moves.insert(0, mov);
-        } else {
-            if !walls.contains(&(candx, candy)) {
-                moves.push(mov)
-            }
-        }
-    }
-
-    moves
+struct Map {
+    grid: Vec<Vec<bool>>,
+    start: (usize, usize),
+    oxygen: (usize, usize),
 }
 
-fn shortest_path(x: i64, y: i64, walls: &HashSet<(i64, i64)>) -> Option<usize> {
-    let (mut minx, maxx, mut miny, maxy) = walls.iter().fold(
-        (i64::MAX, 0, i64::MAX, 0),
-        |(minx, maxx, miny, maxy), (x, y)| (minx.min(*x), maxx.max(*x), miny.min(*y), maxy.max(*y)),
-    );
-
-    if walls.is_empty() {
-        minx = 0;
-        miny = 0;
-    }
-
-    let mut scores = vec![vec![usize::MAX; (maxy - miny + 3) as usize]; (maxx - minx + 3) as usize];
-    let mut queue = vec![];
-    queue.push(((0, 0), 0));
-
-    while !queue.is_empty() {
-        queue.sort_by(|(_, score0), (_, score1)| score1.cmp(score0));
-        let ((currentx, currenty), current_score) = queue.pop().unwrap();
-        if currentx == x && currenty == y {
-            return Some(current_score);
-        }
-
-        for candidate_pos in [
-            (currentx + 1, currenty),
-            (currentx - 1, currenty),
-            (currentx, currenty + 1),
-            (currentx, currenty - 1),
-        ] {
-            if walls.contains(&candidate_pos) {
-                continue;
-            }
-
-            let candidate_score = scores[candidate_pos.0 as usize][candidate_pos.1 as usize];
-
-            if current_score + 1 < candidate_score {
-                scores[candidate_pos.0 as usize][candidate_pos.1 as usize] = current_score + 1;
-                queue.push((candidate_pos, current_score + 1));
-            }
-        }
-    }
-
-    None
-}
-
-fn print_walls(x: i64, y: i64, walls: &HashSet<(i64, i64)>) {
-    let (mut minx, maxx, mut miny, maxy) = walls.iter().fold(
-        (i64::MAX, 0, i64::MAX, 0),
-        |(minx, maxx, miny, maxy), (x, y)| (minx.min(*x), maxx.max(*x), miny.min(*y), maxy.max(*y)),
-    );
-
-    if walls.is_empty() {
-        minx = 0;
-        miny = 0;
-    }
-
-    let mut grid = vec![vec![false; (maxy - miny + 3) as usize]; (maxx - minx + 3) as usize];
-
-    for (x, y) in walls {
-        grid[(*x - minx + 1) as usize][(*y - miny + 1) as usize] = true;
-    }
-
-    for i in 0..grid.len() {
-        for j in 0..grid[0].len() {
-            print!(
-                "{}",
-                if grid[i][j] {
-                    "#"
-                } else if (i as i64 - 1 + minx) == x && (j as i64 - 1 + miny) == y {
-                    "*"
-                } else {
-                    "."
-                }
-            );
-        }
-
-        println!();
-    }
-}
-
-pub fn result_1(input: InputType) -> i64 {
+fn get_map(input: InputType) -> Map {
     let instrs = input
         .into_iter()
         .enumerate()
@@ -264,53 +170,192 @@ pub fn result_1(input: InputType) -> i64 {
     };
 
     let (mut x, mut y) = (0, 0);
-    let mut moves = Vec::from([1, 2, 3, 4]);
     let mut walls: HashSet<(i64, i64)> = HashSet::new();
-    let mut visited: HashSet<(i64, i64)> = HashSet::new();
-    visited.insert((x, y));
 
-    // to follow wall on the right
     let mut orientation = 1;
+    let (mut goalx, mut goaly) = (0, 0);
 
-    loop {
-        print_walls(x, y, &walls);
-        println!("{x} {y}");
-        let (mut newx, mut newy) = (x, y);
-        let mov = moves.pop().unwrap();
+    // WHY does this optimisation doesn't work ?
+    // let mut seen_on_the_right = HashSet::new();
+    let mut is_following_wall = false;
 
-        match mov {
-            1 => newy -= 1,
-            3 => newx += 1,
-            2 => newy += 1,
-            4 => newx -= 1,
-            _ => panic!(),
+    for _ in 0..5000 {
+        // follow wall on the right
+        while walls.contains(&next(x, y, orientation)) {
+            orientation = match orientation {
+                1 => 3,
+                3 => 2,
+                2 => 4,
+                4 => 1,
+                _ => panic!(),
+            };
         }
 
-        prg.inputs = Vec::from([mov]);
+        prg.inputs = Vec::from([orientation]);
 
         run_intcode(&mut prg);
         match prg.outputs.pop().unwrap() {
             0 => {
-                walls.insert((newx, newy));
+                is_following_wall = true;
+                walls.insert(next(x, y, orientation));
             }
             1 => {
-                moves = possible_moves(newx, newy, x, y, &walls);
-                x = newx;
-                y = newy;
-                // if visited.contains(&(newx, newy)) {
-                //     walls.insert((newx, newy));
-                // } else {
-                visited.insert((newx, newy));
+                (x, y) = next(x, y, orientation);
+                // if is_following_wall {
+                //     let right_orientation = match orientation {
+                //         1 => 4,
+                //         4 => 2,
+                //         2 => 3,
+                //         3 => 1,
+                //         _ => panic!(),
+                //     };
+                //     let grid_on_the_right = next(x, y, right_orientation);
+                //     if seen_on_the_right.contains(&grid_on_the_right) {
+                //         println!("{} {} {:?}", x, y, grid_on_the_right);
+                //         break;
+                //     } else {
+                //         seen_on_the_right.insert(grid_on_the_right);
+                //     }
                 // }
+                orientation = match orientation {
+                    1 => 4,
+                    4 => 2,
+                    2 => 3,
+                    3 => 1,
+                    _ => panic!(),
+                };
             }
-            2 => return shortest_path(x, y, &walls).unwrap() as i64,
+            2 => {
+                (x, y) = next(x, y, orientation);
+                (goalx, goaly) = (x, y);
+            }
             _ => panic!("unknown answer"),
         }
     }
+
+    let (minx, maxx, miny, maxy) = walls.iter().fold(
+        (i64::MAX, 0, i64::MAX, 0),
+        |(minx, maxx, miny, maxy), (x, y)| (minx.min(*x), maxx.max(*x), miny.min(*y), maxy.max(*y)),
+    );
+
+    let mut grid = vec![vec![false; (maxy - miny + 1) as usize]; (maxx - minx + 1) as usize];
+
+    for (x, y) in walls {
+        grid[(x - minx) as usize][(y - miny) as usize] = true;
+    }
+
+    Map {
+        grid,
+        start: (-minx as usize, -miny as usize),
+        oxygen: ((goalx - minx) as usize, (goaly - miny) as usize),
+    }
+}
+
+fn shortest_path(map: Map) -> Option<usize> {
+    let mut scores = vec![vec![usize::MAX; map.grid.len()]; map.grid[0].len()];
+    let mut queue = vec![];
+    queue.push((map.start, 0));
+
+    while !queue.is_empty() {
+        queue.sort_by(|(_, score0), (_, score1)| score1.cmp(score0));
+        let ((currentx, currenty), current_score) = queue.pop().unwrap();
+        if (currentx, currenty) == map.oxygen {
+            return Some(current_score);
+        }
+
+        for candidate_pos in [
+            (currentx as i64 + 1, currenty as i64),
+            (currentx as i64 - 1, currenty as i64),
+            (currentx as i64, currenty as i64 + 1),
+            (currentx as i64, currenty as i64 - 1),
+        ] {
+            if candidate_pos.0 < 0
+                || candidate_pos.0 >= map.grid.len() as i64
+                || candidate_pos.1 < 0
+                || candidate_pos.1 >= map.grid[0].len() as i64
+            {
+                continue;
+            }
+
+            let (indexx, indexy) = (candidate_pos.0 as usize, candidate_pos.1 as usize);
+
+            if map.grid[indexx][indexy] {
+                continue;
+            }
+
+            let candidate_score = scores[indexx][indexy];
+
+            if current_score + 1 < candidate_score {
+                scores[indexx][indexy] = current_score + 1;
+                queue.push(((indexx, indexy), current_score + 1));
+            }
+        }
+    }
+
+    None
+}
+
+fn next(x: i64, y: i64, orientation: i128) -> (i64, i64) {
+    match orientation {
+        1 => (x, y - 1),
+        2 => (x, y + 1),
+        3 => (x - 1, y),
+        4 => (x + 1, y),
+        _ => panic!(),
+    }
+}
+
+pub fn result_1(input: InputType) -> i64 {
+    shortest_path(get_map(input)).unwrap() as i64
+}
+
+fn oxygen_time_path(map: Map) -> usize {
+    let mut scores = vec![vec![usize::MAX; map.grid.len()]; map.grid[0].len()];
+    let mut queue = vec![];
+    queue.push((map.oxygen, 0));
+    let mut max = 0;
+
+    while !queue.is_empty() {
+        queue.sort_by(|(_, score0), (_, score1)| score1.cmp(score0));
+        let ((currentx, currenty), current_score) = queue.pop().unwrap();
+        if current_score > max {
+            max = current_score;
+        }
+
+        for candidate_pos in [
+            (currentx as i64 + 1, currenty as i64),
+            (currentx as i64 - 1, currenty as i64),
+            (currentx as i64, currenty as i64 + 1),
+            (currentx as i64, currenty as i64 - 1),
+        ] {
+            if candidate_pos.0 < 0
+                || candidate_pos.0 >= map.grid.len() as i64
+                || candidate_pos.1 < 0
+                || candidate_pos.1 >= map.grid[0].len() as i64
+            {
+                continue;
+            }
+
+            let (indexx, indexy) = (candidate_pos.0 as usize, candidate_pos.1 as usize);
+
+            if map.grid[indexx][indexy] {
+                continue;
+            }
+
+            let candidate_score = scores[indexx][indexy];
+
+            if current_score + 1 < candidate_score {
+                scores[indexx][indexy] = current_score + 1;
+                queue.push(((indexx, indexy), current_score + 1));
+            }
+        }
+    }
+
+    max
 }
 
 pub fn result_2(input: InputType) -> i64 {
-    0
+    oxygen_time_path(get_map(input)) as i64
 }
 
 pub fn read_input(path: &str) -> InputType {
