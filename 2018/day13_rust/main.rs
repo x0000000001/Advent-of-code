@@ -14,7 +14,6 @@ fn ex_function(foo: fn(InputType) -> i64, name: &str, path: &str) {
     );
 }
 
-// 32193 too low
 fn main() {
     ex_function(result_1, "test 1", TEST_PATH);
     ex_function(result_2, "test 2", TEST_PATH);
