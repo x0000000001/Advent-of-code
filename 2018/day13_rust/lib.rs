@@ -14,7 +14,7 @@ pub struct Mine {
     map: Vec<Vec<char>>,
 }
 
-fn iter_tick(g: &mut Mine) -> Option<usize> {
+fn iter_tick(g: &mut Mine) -> Option<(usize, usize)> {
     g.carts.sort_by_key(|c| c.x * g.map.len() + c.y);
 
     for cart in g.carts.iter_mut() {
@@ -26,16 +26,44 @@ fn iter_tick(g: &mut Mine) -> Option<usize> {
             _ => panic!(),
         };
 
-        // collision check
-
-        for i in 0..g.carts.len() {
-            if g.carts[i].x == cart.x && g.carts[i].y == y {
-                return;
-            }
-        }
-
         match g.map[cart.x][cart.y] {
             '-' | '|' => (),
+            '+' => {
+                match cart.state {
+                    0 => cart.facing = (cart.facing + 3) % 4,
+                    2 => cart.facing = (cart.facing + 1) % 4,
+                    _ => panic!(),
+                }
+                cart.state = (cart.state + 1) % 3
+            }
+            '/' => {
+                cart.facing = match cart.facing {
+                    0 => 1,
+                    3 => 2,
+                    2 => 3,
+                    1 => 0,
+                    _ => panic!(),
+                }
+            }
+            '\\' => {
+                cart.facing = match cart.facing {
+                    0 => 3,
+                    1 => 2,
+                    2 => 1,
+                    3 => 0,
+                    _ => panic!(),
+                }
+            }
+            _ => panic!(),
+        }
+    }
+
+    // collision check
+    for i in 0..g.carts.len() {
+        for j in 0..g.carts.len() {
+            if g.carts[i].x == g.carts[j].x && g.carts[i].y == g.carts[j].y {
+                return Some((g.carts[i].x, g.carts[i].y));
+            }
         }
     }
 
@@ -43,10 +71,39 @@ fn iter_tick(g: &mut Mine) -> Option<usize> {
 }
 
 pub fn result_1(mut input: InputType) -> i64 {
+    print_map(&input);
     loop {
         if let Some(x) = iter_tick(&mut input) {
-            return x as i64;
+            println!("{:?}", x);
+            break;
         }
+
+        print_map(&input);
+    }
+
+    0
+}
+
+fn print_map(input: &Mine) {
+    for i in 0..input.map.len() {
+        let mut s = "".to_string();
+        for j in 0..input.map[0].len() {
+            for cart in input.carts.iter() {
+                if cart.x == i && cart.y == j {
+                    s += match cart.facing {
+                        0 => "^",
+                        1 => ">",
+                        2 => "v",
+                        3 => "<",
+                        _ => panic!(),
+                    };
+                } else {
+                    s += &input.map[i][j].to_string();
+                }
+            }
+        }
+
+        println!("{s}");
     }
 }
 
@@ -60,7 +117,6 @@ pub fn read_input(path: &str) -> InputType {
     let mut input: Vec<Vec<char>> = contents
         .lines()
         .into_iter()
-        .map(|line| line.trim().to_owned())
         .filter(|l| !l.is_empty())
         .map(|l| l.chars().collect())
         .collect();
@@ -72,8 +128,8 @@ pub fn read_input(path: &str) -> InputType {
             let facing = match input[i][j] {
                 '^' => 0,
                 '>' => 1,
-                'v' => 3,
-                '<' => 4,
+                'v' => 2,
+                '<' => 3,
                 _ => 7,
             };
 
