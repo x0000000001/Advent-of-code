@@ -1,101 +1,124 @@
 import { benchmark, test } from "./main.js";
 
-type InputType = [boolean[], [boolean[], boolean][]];
+type Data = {
+  plants: Set<number>;
+  rules: boolean[][];
+  min_index: number;
+  max_index: number;
+};
 
-export const format = (lines: string[]) => {
+export const format = (lines: string[]): Data => {
   const string_to_bool_array = (s) => Array.from(s).map((c) => c === "#");
-  let initial_state = string_to_bool_array(lines[0].split(" ")[2]);
-  initial_state.splice(0, 0, false, false, false, false, false);
-  initial_state.splice(
-    initial_state.length,
-    0,
-    false,
-    false,
-    false,
-    false,
-    false,
-    false
-  );
+  let initial_state_array = string_to_bool_array(lines[0].split(" ")[2]);
+  let initial_state = new Set<number>();
+  for (const [i, b] of initial_state_array.entries()) {
+    if (b) {
+      initial_state.add(i);
+    }
+  }
+
   let rules = [];
   for (let i = 1; i < lines.length; i++) {
     let temp = lines[i].split(" => ");
-    rules.push(string_to_bool_array(temp[0]), temp[1] == "#");
+    if (temp[1] == "#") {
+      rules.push(string_to_bool_array(temp[0]));
+    }
   }
-  return { plants: initial_state, rules, offset: -5 };
+
+  return {
+    plants: initial_state,
+    rules,
+    min_index: -5,
+    max_index: initial_state_array.length + 5,
+  };
 };
 
-const iterate = (data) => {
-  let add_at_beginning = false;
-  let add_at_end = false;
-  let new_plants = new Array(data.plants.length).fill(false);
-  for (let i = 2; i < data.plants.length - 2; i++) {
+const iterate = (data: Data): void => {
+  let new_plants = new Set<number>();
+  let new_min_index = data.min_index;
+  let new_max_index = data.max_index;
+
+  for (let i = data.min_index; i < data.max_index - 2; i++) {
     for (let j = 0; j < data.rules.length; j++) {
       let follows_rule = true;
       for (let k = 0; k < 5; k++) {
-        if (data.plants[i + k - 2] !== data.rules[j][k]) {
+        if (data.rules[j][k] !== data.plants.has(i + k - 2)) {
           follows_rule = false;
           break;
         }
       }
       if (follows_rule) {
-        new_plants[i] = data.rules[j][1];
+        new_plants.add(i);
 
-        if (i < 2) {
-          add_at_beginning = true;
-        } else if (i > data.plants.length - 2) {
-          add_at_end = true;
+        if (i > new_max_index - 5) {
+          new_max_index = i + 5;
+        } else if (i < new_min_index + 5) {
+          new_min_index = i - 5;
         }
+
+        break;
       }
     }
   }
 
   data.plants = new_plants;
+  data.min_index = new_min_index;
+  data.max_index = new_max_index;
+};
 
-  if (add_at_beginning) {
-    data.plants.splice(0, 0, false, false, false, false, false);
-    data.offset += 5;
+const compute_score = ({ plants }: Data): number => {
+  return [...plants].reduce((a, b) => a + b, 0);
+};
+
+const print_data = (data: Data): void => {
+  let s = "";
+  for (let index = data.min_index; index < data.max_index; index++) {
+    if (data.plants.has(index)) {
+      s += "#";
+    } else {
+      s += ".";
+    }
   }
-
-  if (add_at_end) {
-    data.plants.splice(
-      data.plants.length,
-      0,
-      false,
-      false,
-      false,
-      false,
-      false
-    );
-  }
+  console.log(s);
 };
 
-const compute_score = ({ plants, offset }) => {
-  return plants.map((x, i) => (x ? i + offset : 0)).reduce((a, b) => a + b, 0);
-};
-
-const print_data = (data) => {
-  console.log(
-    data.plants.map((x) => (x ? "#" : ".")).reduce((a, b) => a + b, "")
-  );
-  console.log(data.offset);
-};
-
-const f0 = (data) => {
-  for (let _ = 0; _ < 20; _++) {
-    print_data(data);
+const f0 = (data: Data): number => {
+  // print_data(data);
+  for (let i = 0; i < 20; i++) {
     iterate(data);
+    // console.log(i);
+    // print_data(data);
+    // console.log(compute_score(data));
   }
 
   return compute_score(data);
 };
 
-const f1 = (input) => {
-  return 0;
+//3399999996471 too high
+const f1 = (data: Data): number => {
+  let score = compute_score(data);
+  let last_difference = null;
+  let same_difference_count = 0;
+  for (let i = 0; i < 50000000000; i++) {
+    iterate(data);
+    let temp_score = compute_score(data);
+    if (temp_score - score == last_difference) {
+      same_difference_count += 1;
+    } else {
+      same_difference_count = 0;
+    }
+    if (same_difference_count > 100) {
+      score += last_difference * (50000000000 - i);
+      console.log(last_difference);
+      break;
+    }
+    last_difference = temp_score - score;
+    score = temp_score;
+  }
+
+  return score;
 };
 
-test([
-  { f: f0, expected: 325 },
-  { f: f1, expected: 0 },
-]);
+test([{ f: f0, expected: 325 }]);
 
 benchmark(f0, f1);
