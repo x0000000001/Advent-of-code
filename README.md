@@ -31,3 +31,5 @@ When coding in python, I will aim to do [golfing](https://fr.wikipedia.org/wiki/
 * 2020::17 : Not hard, BUT custom equality doesn't exist in js for sets : it is an equality of pointers. This is exhausting.
 
 * 2020::19 : My code for part 2 is... not supposed to work ? (it should not avoid infinite loops...)
+
+* 2018::14 : 300s for part 2, and I can't find a way to optimize it... [Apparently lazy linked lists seem to do the job](https://www.reddit.com/r/adventofcode/comments/a61ojp/comment/ebr5c0q/?utm_source=share&utm_medium=web2x&context=3), but I didn't spend enough time to implement it in rust.
