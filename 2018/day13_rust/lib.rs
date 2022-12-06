@@ -9,15 +9,31 @@ pub struct Cart {
     y: usize,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum GridState {
+    Free,
+    Occupied,
+    Collision,
+}
+
 pub struct Mine {
     carts: Vec<Cart>,
     map: Vec<Vec<char>>,
+    carts_map: Vec<Vec<GridState>>,
 }
 
-fn iter_tick(g: &mut Mine) -> Option<(usize, usize)> {
+// returns vec of crashes coordinates
+fn iter_tick(g: &mut Mine) -> Vec<(usize, usize)> {
     g.carts.sort_by_key(|c| c.x * g.map.len() + c.y);
+    let mut collisions = vec![];
 
     for cart in g.carts.iter_mut() {
+        if g.carts_map[cart.x][cart.y] == GridState::Collision {
+            continue;
+        } else {
+            g.carts_map[cart.x][cart.y] = GridState::Free;
+        }
+
         (cart.x, cart.y) = match cart.facing {
             0 => (cart.x - 1, cart.y),
             1 => (cart.x, cart.y + 1),
@@ -26,12 +42,21 @@ fn iter_tick(g: &mut Mine) -> Option<(usize, usize)> {
             _ => panic!(),
         };
 
+        if g.carts_map[cart.x][cart.y] == GridState::Occupied {
+            g.carts_map[cart.x][cart.y] = GridState::Collision;
+            collisions.push((cart.x, cart.y));
+            continue;
+        } else {
+            g.carts_map[cart.x][cart.y] = GridState::Occupied;
+        }
+
         match g.map[cart.x][cart.y] {
             '-' | '|' => (),
             '+' => {
                 match cart.state {
                     0 => cart.facing = (cart.facing + 3) % 4,
                     2 => cart.facing = (cart.facing + 1) % 4,
+                    1 => (),
                     _ => panic!(),
                 }
                 cart.state = (cart.state + 1) % 3
@@ -58,36 +83,29 @@ fn iter_tick(g: &mut Mine) -> Option<(usize, usize)> {
         }
     }
 
-    // collision check
-    for i in 0..g.carts.len() {
-        for j in 0..g.carts.len() {
-            if g.carts[i].x == g.carts[j].x && g.carts[i].y == g.carts[j].y {
-                return Some((g.carts[i].x, g.carts[i].y));
-            }
-        }
-    }
-
-    None
+    collisions
 }
 
 pub fn result_1(mut input: InputType) -> i64 {
-    print_map(&input);
+    // print_map(&input);
     loop {
-        if let Some(x) = iter_tick(&mut input) {
+        if let Some(x) = iter_tick(&mut input).pop() {
             println!("{:?}", x);
             break;
         }
 
-        print_map(&input);
+        // print_map(&input);
     }
 
     0
 }
 
+#[allow(dead_code)]
 fn print_map(input: &Mine) {
     for i in 0..input.map.len() {
         let mut s = "".to_string();
         for j in 0..input.map[0].len() {
+            let mut was_a_cart = false;
             for cart in input.carts.iter() {
                 if cart.x == i && cart.y == j {
                     s += match cart.facing {
@@ -97,9 +115,12 @@ fn print_map(input: &Mine) {
                         3 => "<",
                         _ => panic!(),
                     };
-                } else {
-                    s += &input.map[i][j].to_string();
+                    was_a_cart = true;
+                    break;
                 }
+            }
+            if !was_a_cart {
+                s += &input.map[i][j].to_string();
             }
         }
 
@@ -107,14 +128,40 @@ fn print_map(input: &Mine) {
     }
 }
 
-pub fn result_2(input: InputType) -> i64 {
+pub fn result_2(mut input: InputType) -> i64 {
+    // print_map(&input);
+    while input.carts.len() > 1 {
+        let collisions = iter_tick(&mut input);
+        input.carts = input
+            .carts
+            .into_iter()
+            .filter(|cart| {
+                for &(collx, colly) in collisions.iter() {
+                    if cart.x == collx && cart.y == colly {
+                        return false;
+                    }
+                }
+
+                true
+            })
+            .collect();
+
+        collisions
+            .into_iter()
+            .for_each(|(x, y)| input.carts_map[x][y] = GridState::Free);
+
+        // print_map(&input);
+    }
+
+    println!("{:?}", (input.carts[0].y, input.carts[0].x));
+
     0
 }
 
 pub fn read_input(path: &str) -> InputType {
     let contents = fs::read_to_string(path).expect("Something went wrong reading the file");
 
-    let mut input: Vec<Vec<char>> = contents
+    let mut map: Vec<Vec<char>> = contents
         .lines()
         .into_iter()
         .filter(|l| !l.is_empty())
@@ -123,9 +170,9 @@ pub fn read_input(path: &str) -> InputType {
 
     let mut carts = vec![];
 
-    for i in 0..input.len() {
-        for j in 0..input[0].len() {
-            let facing = match input[i][j] {
+    for i in 0..map.len() {
+        for j in 0..map[0].len() {
+            let facing = match map[i][j] {
                 '^' => 0,
                 '>' => 1,
                 'v' => 2,
@@ -144,16 +191,23 @@ pub fn read_input(path: &str) -> InputType {
                 y: j,
             });
 
-            input[i][j] = match facing {
-                0 | 2 => '-',
-                1 | 3 => '|',
+            map[i][j] = match facing {
+                0 | 2 => '|',
+                1 | 3 => '-',
                 _ => panic!(),
             };
         }
     }
 
+    let mut carts_map = vec![vec![GridState::Free; map[0].len()]; map.len()];
+
+    for c in carts.iter() {
+        carts_map[c.x][c.y] = GridState::Occupied;
+    }
+
     Mine {
-        carts: carts,
-        map: input,
+        carts,
+        map,
+        carts_map,
     }
 }
