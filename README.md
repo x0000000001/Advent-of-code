@@ -9,13 +9,13 @@ When coding in python, I will aim to do [golfing](https://fr.wikipedia.org/wiki/
 
 ## Which year in which language ?
 
-*2015* **Rust** \
-*2016* **Rust** \
-*2017* **Rust** \
+*2015* **Rust** *finsihed*\
+*2016* **Rust** *finsihed*\
+*2017* **Rust** *finsihed*\
 *2018* **JavaScript/TypeScript** and **Rust** \
 *2019* **JavaScript/TypeScript** and **Rust** \
-*2020* **JavaScript/TypeScript** and **Go** and **Rust** \
-*2021* **Rust** \
+*2020* **JavaScript/TypeScript** and **Go** and **Rust** *finsihed*\
+*2021* **Rust** *finsihed*\
 *2022*
 
 ## Challenges that have caused me some problems/ that I have failed to do alone
