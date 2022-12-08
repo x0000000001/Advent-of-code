@@ -1,20 +1,20 @@
 #![feature(drain_filter)]
 use std::fs;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Clan {
     Gobelin,
     Elf,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum State {
     Occupied(Clan),
     Free,
     Wall,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Player {
     x: usize,
     y: usize,
@@ -28,9 +28,30 @@ pub struct Game {
     players: Vec<Player>,
 }
 
+impl Game {
+    fn print(&self) {
+        for l in self.map.iter() {
+            for c in l.iter() {
+                print!(
+                    "{}",
+                    match c {
+                        State::Free => ".",
+                        State::Occupied(clan) => match clan {
+                            Clan::Gobelin => "G",
+                            Clan::Elf => "E",
+                        },
+                        State::Wall => "#",
+                    }
+                );
+            }
+            println!();
+        }
+    }
+}
+
 pub type InputType = Game;
 
-fn accesible_squares(game: &InputType, player_index: usize) -> Vec<(usize, usize)> {
+fn compute_accessible_squares(game: &InputType, player_index: usize) -> Vec<(usize, usize)> {
     let mut squares = vec![];
 
     for other in game.players.iter() {
@@ -56,8 +77,8 @@ fn accesible_squares(game: &InputType, player_index: usize) -> Vec<(usize, usize
     squares
 }
 
-// returns vec of ids
-fn ennemies_in_range(game: &InputType, player_index: usize) -> Vec<usize> {
+// returns vec of (usize,usize)
+fn compute_ennemies_in_range(game: &InputType, player_index: usize) -> Vec<usize> {
     [
         (
             game.players[player_index].x as i64 + 1,
@@ -95,16 +116,114 @@ fn ennemies_in_range(game: &InputType, player_index: usize) -> Vec<usize> {
     .collect()
 }
 
-/// returns (
-///    Option<length of shortest path>,
-///    best orientation (0,1,2,3) to follow this shortest path, by reading order
-///)
-fn shortest_path_routes(
+fn compute_best_move(
     game: &InputType,
     start: (usize, usize),
-    goal: (usize, usize),
-) -> (Option<usize>, u8) {
-    todo!()
+    goals: Vec<(usize, usize)>,
+) -> Option<u8> {
+    // grid of (distance from start, vec of all best paths to get there)
+    let (h, w) = (game.map.len(), game.map[0].len());
+    let mut scores: Vec<Vec<(usize, Vec<Vec<(usize, usize)>>)>> =
+        vec![vec![(usize::MAX, vec![]); w]; h];
+    scores[start.0][start.1] = (0, vec![vec![start; 1]; 1]);
+    // score, position, best paths to get there
+    let mut queue: Vec<(usize, (usize, usize))> = vec![];
+    queue.push((0, (start.0, start.1)));
+
+    while !queue.is_empty() {
+        queue.sort_by_key(|(score, _)| -(*score as i64));
+        let (score, position) = queue.pop().unwrap();
+
+        let mut temp_neighbors = Vec::from([
+            (position.0 as i64 - 1, position.1 as i64),
+            (position.0 as i64 + 1, position.1 as i64),
+            (position.0 as i64, position.1 as i64 - 1),
+            (position.0 as i64, position.1 as i64 + 1),
+        ]);
+
+        temp_neighbors.drain_filter(|&mut (x, y)| {
+            !(x >= 0
+                && y >= 0
+                && x < h as i64
+                && y < w as i64
+                && game.map[x as usize][y as usize].eq(&State::Free))
+        });
+        let neighbors = temp_neighbors
+            .into_iter()
+            .map(|(x, y)| (x as usize, y as usize))
+            .collect::<Vec<(usize, usize)>>();
+
+        for (x, y) in neighbors {
+            let score_diff = scores[x][y].0 as i128 - (score + 1) as i128;
+            if score_diff > 0 {
+                scores[x][y] = (
+                    score + 1,
+                    scores[position.0][position.1]
+                        .1
+                        .iter()
+                        .map(|path| {
+                            let mut new_path = path.clone();
+                            new_path.push((x, y));
+                            new_path
+                        })
+                        .collect(),
+                );
+                queue.push((score + 1, (x, y)));
+            } else if score_diff == 0 {
+                let mut new_paths = scores[position.0][position.1]
+                    .1
+                    .iter()
+                    .map(|path| {
+                        let mut new_path = path.clone();
+                        new_path.push((x, y));
+                        new_path
+                    })
+                    .collect();
+                scores[x][y].1.append(&mut new_paths);
+            }
+        }
+    }
+
+    let mut candidate_paths: Vec<Vec<(usize, usize)>> = goals
+        .into_iter()
+        .flat_map(|(x, y)| scores[x][y].1.clone())
+        .collect();
+
+    // no path
+    if candidate_paths.is_empty() {
+        return None;
+    }
+
+    let min_length = candidate_paths.iter().map(|p| p.len()).min().unwrap();
+
+    candidate_paths.drain_filter(|p| p.len() != min_length);
+    let mut possible_first_moves: Vec<u8> = candidate_paths
+        .into_iter()
+        .map(|p| {
+            let first_move = p[1];
+            if first_move.0 > start.0 {
+                2
+            } else if first_move.0 < start.0 {
+                0
+            } else if first_move.1 > start.1 {
+                1
+            } else if first_move.1 < start.1 {
+                3
+            } else {
+                panic!()
+            }
+        })
+        .collect();
+
+    possible_first_moves.sort_by_key(|m| match m {
+        0 => 3,
+        3 => 2,
+        1 => 1,
+        2 => 0,
+        _ => panic!(),
+    });
+
+    possible_first_moves.pop()
 }
 
 fn iter_game(game: &mut InputType) -> bool {
@@ -115,31 +234,30 @@ fn iter_game(game: &mut InputType) -> bool {
     while i < game.players.len() {
         // dead
         if game.players[i].hitpoints <= 0 {
+            i += 1;
             continue;
         }
-        let squares = accesible_squares(game, i);
-        let mut range_ennemies = ennemies_in_range(game, i);
-        if range_ennemies.is_empty() && squares.is_empty() {
+        let accessible_squares = compute_accessible_squares(game, i);
+        let mut ennemies_in_range = compute_ennemies_in_range(game, i);
+        if ennemies_in_range.is_empty() && accessible_squares.is_empty() {
             // nothing to do
+            i += 1;
             continue;
-        } else if range_ennemies.is_empty() {
+        } else if ennemies_in_range.is_empty() {
             // tries to move
-            let mut moves: Vec<(Option<usize>, u8)> = squares
-                .iter()
-                .map(|goal| {
-                    shortest_path_routes(game, (game.players[i].x, game.players[i].y), *goal)
-                })
-                .filter(|(length, _)| length.is_some())
-                .collect();
-
-            if moves.is_empty() {
+            let best_move = compute_best_move(
+                game,
+                (game.players[i].x, game.players[i].y),
+                accessible_squares,
+            );
+            if best_move.is_none() {
                 // no reachable target
+                i += 1;
                 continue;
             }
-            // moves
-            moves.sort_by_key(|(length, _)| *length);
+            // actually moves
             game.map[game.players[i].x][game.players[i].y] = State::Free;
-            match moves[0].1 {
+            match best_move.unwrap() {
                 0 => game.players[i].x -= 1,
                 1 => game.players[i].y += 1,
                 2 => game.players[i].x += 1,
@@ -149,21 +267,24 @@ fn iter_game(game: &mut InputType) -> bool {
             game.map[game.players[i].x][game.players[i].y] = State::Occupied(game.players[i].clan);
         }
 
-        range_ennemies = ennemies_in_range(game, i);
-        if !range_ennemies.is_empty() {
+        ennemies_in_range = compute_ennemies_in_range(game, i);
+        if !ennemies_in_range.is_empty() {
             // attacks
-            range_ennemies.sort_by_key(|j| {
-                1000000 - game.players[*j].hitpoints as usize
-                    + game.players[*j].x * game.map.len()
-                    + game.players[*j].y
+            ennemies_in_range.sort_by_key(|&j| {
+                -(game.players[j].hitpoints * 100000
+                    + (game.players[j].x * game.map.len()) as i64
+                    + game.players[j].y as i64)
             });
 
-            game.players[range_ennemies[0]].hitpoints -= game.players[i].attack_force as i64;
+            let victim_id = ennemies_in_range.pop().unwrap();
 
-            // attacked player dies
-            if game.players[range_ennemies[0]].hitpoints <= 0 {
-                game.players.remove(range_ennemies[0]);
-                if range_ennemies[0] < i {
+            game.players[victim_id].hitpoints -= game.players[i].attack_force as i64;
+
+            // victim dies
+            if game.players[victim_id].hitpoints <= 0 {
+                game.map[game.players[victim_id].x][game.players[victim_id].y] = State::Free;
+                game.players.remove(victim_id);
+                if victim_id < i {
                     i -= 1;
                 }
             }
@@ -172,15 +293,32 @@ fn iter_game(game: &mut InputType) -> bool {
         i += 1;
     }
 
-    false
+    // game ends if only one clan remains
+    let clan = game.players[0].clan;
+
+    for p in game.players.iter() {
+        if p.clan != clan {
+            return false;
+        }
+    }
+
+    true
 }
 
 pub fn result_1(mut game: InputType) -> i64 {
-    let mut round = 0;
+    let mut round = 1;
     while !iter_game(&mut game) {
+        // println!("{}", round + 1);
+        // game.print();
         round += 1;
     }
-    0
+    println!(
+        "{} * {}",
+        round,
+        game.players.iter().map(|p| p.hitpoints).sum::<i64>()
+    );
+    game.print();
+    game.players.iter().map(|p| p.hitpoints).sum::<i64>() * round
 }
 
 pub fn result_2(input: InputType) -> i64 {
