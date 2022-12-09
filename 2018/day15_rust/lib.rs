@@ -129,10 +129,25 @@ fn compute_best_move(
     // score, position, best paths to get there
     let mut queue: Vec<(usize, (usize, usize))> = vec![];
     queue.push((0, (start.0, start.1)));
+    let mut min_length_found = usize::MAX;
 
     while !queue.is_empty() {
         queue.sort_by_key(|(score, _)| -(*score as i64));
         let (score, position) = queue.pop().unwrap();
+
+        // no more candidate path better than the one already found
+        if score > min_length_found {
+            break;
+        }
+
+        if goals.contains(&position) {
+            min_length_found = score;
+        }
+
+        if min_length_found != usize::MAX {
+            // all potential other candidates should be in the queue now
+            continue;
+        }
 
         let mut temp_neighbors = Vec::from([
             (position.0 as i64 - 1, position.1 as i64),
@@ -141,13 +156,24 @@ fn compute_best_move(
             (position.0 as i64, position.1 as i64 + 1),
         ]);
 
-        temp_neighbors.drain_filter(|&mut (x, y)| {
-            !(x >= 0
-                && y >= 0
-                && x < h as i64
-                && y < w as i64
-                && game.map[x as usize][y as usize].eq(&State::Free))
-        });
+        // temp_neighbors.drain_filter(|&mut (x, y)| {
+        //     !(x >= 0
+        //         && y >= 0
+        //         && x < h as i64
+        //         && y < w as i64
+        //         && game.map[x as usize][y as usize].eq(&State::Free))
+        // });
+        temp_neighbors = temp_neighbors
+            .into_iter()
+            .filter(|&(x, y)| {
+                x >= 0
+                    && y >= 0
+                    && x < h as i64
+                    && y < w as i64
+                    && game.map[x as usize][y as usize].eq(&State::Free)
+            })
+            .collect();
+
         let neighbors = temp_neighbors
             .into_iter()
             .map(|(x, y)| (x as usize, y as usize))
@@ -194,9 +220,9 @@ fn compute_best_move(
         return None;
     }
 
-    let min_length = candidate_paths.iter().map(|p| p.len()).min().unwrap();
+    // let min_length = candidate_paths.iter().map(|p| p.len()).min().unwrap();
 
-    candidate_paths.drain_filter(|p| p.len() != min_length);
+    // candidate_paths.drain_filter(|p| p.len() != min_length);
     let mut possible_first_moves: Vec<u8> = candidate_paths
         .into_iter()
         .map(|p| {
@@ -306,10 +332,10 @@ fn iter_game(game: &mut InputType) -> bool {
 }
 
 pub fn result_1(mut game: InputType) -> i64 {
-    let mut round = 1;
+    let mut round = 0;
     while !iter_game(&mut game) {
-        // println!("{}", round + 1);
-        // game.print();
+        println!("{}", round + 1);
+        game.print();
         round += 1;
     }
     println!(

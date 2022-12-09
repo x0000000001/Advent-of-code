@@ -1,14 +1,20 @@
 import { benchmark, test } from "./main.js";
 
-export const format = (lines: string[]) => {
-  return lines;
+type InputType = {
+  lines: string[];
 };
 
-const f0 = (input) => {
+type OutputType = number;
+
+export const format = (lines: string[]): InputType => {
+  return { lines };
+};
+
+const f0 = ({ lines }: InputType): OutputType => {
   return 0;
 };
 
-const f1 = (input) => {
+const f1 = ({ lines }: InputType): OutputType => {
   return 0;
 };
 
