@@ -210,7 +210,7 @@ fn compute_best_move(
         }
     }
 
-    let mut candidate_paths: Vec<Vec<(usize, usize)>> = goals
+    let candidate_paths: Vec<Vec<(usize, usize)>> = goals
         .into_iter()
         .flat_map(|(x, y)| scores[x][y].1.clone())
         .collect();
@@ -291,9 +291,9 @@ fn iter_game(game: &mut InputType) -> bool {
                 _ => panic!(),
             }
             game.map[game.players[i].x][game.players[i].y] = State::Occupied(game.players[i].clan);
+            ennemies_in_range = compute_ennemies_in_range(game, i);
         }
 
-        ennemies_in_range = compute_ennemies_in_range(game, i);
         if !ennemies_in_range.is_empty() {
             // attacks
             ennemies_in_range.sort_by_key(|&j| {
