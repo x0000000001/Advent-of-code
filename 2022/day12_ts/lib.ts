@@ -38,8 +38,16 @@ export const format = (lines: string[]): InputType => {
   return { map, startx, endx, starty, endy };
 };
 
-// Djisktra
-const f0 = ({ map, startx, endx, starty, endy }: InputType): OutputType => {
+const Djisktra = (
+  { map, startx, starty }: InputType,
+  end_condition: (xc: number, yc: number) => boolean,
+  are_neighbors_condition: (
+    xorigin: number,
+    yorigin: number,
+    xcandidate: number,
+    ycandidate: number
+  ) => boolean
+): number => {
   let queue = [[0, startx, starty]];
   let [h, w] = [map.length, map[0].length];
   let scores = Array.from({ length: h }, () =>
@@ -51,7 +59,7 @@ const f0 = ({ map, startx, endx, starty, endy }: InputType): OutputType => {
     queue.sort((a, b) => b[0] - a[0]);
     let [score, x, y] = queue.pop();
 
-    if (x == endx && y == endy) {
+    if (end_condition(x, y)) {
       return score;
     }
 
@@ -59,23 +67,31 @@ const f0 = ({ map, startx, endx, starty, endy }: InputType): OutputType => {
     let new_score = score + 1;
     let height = map[x][y];
 
-    if (x > 0 && scores[x - 1][y] > new_score && map[x - 1][y] <= height + 1) {
+    if (
+      x > 0 &&
+      scores[x - 1][y] > new_score &&
+      are_neighbors_condition(x, y, x - 1, y)
+    ) {
       candidates.push([x - 1, y]);
     }
-    if (y > 0 && scores[x][y - 1] > new_score && map[x][y - 1] <= height + 1) {
+    if (
+      y > 0 &&
+      scores[x][y - 1] > new_score &&
+      are_neighbors_condition(x, y, x, y - 1)
+    ) {
       candidates.push([x, y - 1]);
     }
     if (
       x < h - 1 &&
       scores[x + 1][y] > new_score &&
-      map[x + 1][y] <= height + 1
+      are_neighbors_condition(x, y, x + 1, y)
     ) {
       candidates.push([x + 1, y]);
     }
     if (
       y < w - 1 &&
       scores[x][y + 1] > new_score &&
-      map[x][y + 1] <= height + 1
+      are_neighbors_condition(x, y, x, y + 1)
     ) {
       candidates.push([x, y + 1]);
     }
@@ -89,61 +105,23 @@ const f0 = ({ map, startx, endx, starty, endy }: InputType): OutputType => {
   return -1;
 };
 
-// Complete reverse Djisktra
-const f1 = ({ map, startx, endx, starty, endy }: InputType): OutputType => {
-  let queue = [[0, endx, endy]];
-  let [h, w] = [map.length, map[0].length];
-  let scores = Array.from({ length: h }, () =>
-    Array.from({ length: w }, () => Number.MAX_SAFE_INTEGER)
-  );
-  scores[endx][endy] = 0;
+// Djisktra
+const f0 = (input: InputType): OutputType => {
+  let end_condition = (x, y) => x == input.endx && y == input.endy;
+  7;
+  let are_neighbors_condition = (xorigin, yorigin, xcandidate, ycandidate) =>
+    input.map[xcandidate][ycandidate] <= input.map[xorigin][yorigin] + 1;
+  return Djisktra(input, end_condition, are_neighbors_condition);
+};
 
-  while (queue.length != 0) {
-    queue.sort((a, b) => b[0] - a[0]);
-    let [score, x, y] = queue.pop();
-
-    let candidates = [];
-    let new_score = score + 1;
-    let height = map[x][y];
-
-    if (x > 0 && scores[x - 1][y] > new_score && map[x - 1][y] >= height - 1) {
-      candidates.push([x - 1, y]);
-    }
-    if (y > 0 && scores[x][y - 1] > new_score && map[x][y - 1] >= height - 1) {
-      candidates.push([x, y - 1]);
-    }
-    if (
-      x < h - 1 &&
-      scores[x + 1][y] > new_score &&
-      map[x + 1][y] >= height - 1
-    ) {
-      candidates.push([x + 1, y]);
-    }
-    if (
-      y < w - 1 &&
-      scores[x][y + 1] > new_score &&
-      map[x][y + 1] >= height - 1
-    ) {
-      candidates.push([x, y + 1]);
-    }
-
-    for (const [candidatex, candidatey] of candidates) {
-      scores[candidatex][candidatey] = new_score;
-      queue.push([new_score, candidatex, candidatey]);
-    }
-  }
-
-  let min = Number.MAX_SAFE_INTEGER;
-
-  for (let i = 0; i < h; i++) {
-    for (let j = 0; j < w; j++) {
-      if (map[i][j] == 0 && scores[i][j] < min) {
-        min = scores[i][j];
-      }
-    }
-  }
-
-  return min;
+// Djisktra - unknown target
+const f1 = (input: InputType): OutputType => {
+  let end_condition = (x, y) => input.map[x][y] == 0;
+  let are_neighbors_condition = (xorigin, yorigin, xcandidate, ycandidate) =>
+    input.map[xcandidate][ycandidate] >= input.map[xorigin][yorigin] - 1;
+  input.startx = input.endx;
+  input.starty = input.endy;
+  return Djisktra(input, end_condition, are_neighbors_condition);
 };
 
 test([
