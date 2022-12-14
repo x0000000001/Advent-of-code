@@ -2,48 +2,6 @@ use std::{collections::HashSet, fs};
 
 pub type InputType = HashSet<(usize, usize)>;
 
-struct Waterflow<'a> {
-    walls: &'a HashSet<(usize, usize)>,
-    still_water: &'a mut HashSet<(usize, usize)>,
-}
-
-fn next_water_position(
-    walls: &InputType,
-    still_water: &HashSet<(usize, usize)>,
-    maxy: usize,
-) -> Option<(usize, usize)> {
-    let mut current = (500, 0);
-    let mut path = HashSet::new();
-
-    loop {
-        path.insert(current);
-
-        if current.1 > maxy {
-            return None;
-        }
-
-        let bottom = (current.0, current.1 + 1);
-        if !path.contains(&bottom) && !still_water.contains(&bottom) && !walls.contains(&bottom) {
-            current = bottom;
-            continue;
-        }
-
-        let left = (current.0 - 1, current.1);
-        if !path.contains(&left) && !still_water.contains(&left) && !walls.contains(&left) {
-            current = left;
-            continue;
-        }
-
-        let right = (current.0 + 1, current.1);
-        if !path.contains(&right) && !still_water.contains(&right) && !walls.contains(&right) {
-            current = right;
-            continue;
-        }
-
-        return Some(current);
-    }
-}
-
 #[allow(dead_code)]
 fn print_walls(walls: &HashSet<(usize, usize)>) {
     let minx = *walls.iter().map(|(x, _)| x).min().unwrap();
@@ -61,21 +19,51 @@ fn print_walls(walls: &HashSet<(usize, usize)>) {
 }
 
 pub fn result_1(walls: InputType) -> i64 {
-    // let mut t = 0;
-    // let maxy = *walls.iter().map(|(_, y)| y).max().unwrap();
-    // let mut still_water = HashSet::new();
+    let maxy = *walls.iter().map(|(_, y)| y).max().unwrap();
+    let miny = *walls.iter().map(|(_, y)| y).min().unwrap();
+    let mut still_water: HashSet<(usize, usize)> = HashSet::new();
+    let mut moving_water: HashSet<(usize, usize)> = HashSet::new();
+    let mut current_path = vec![];
+    current_path.push((500, 0));
 
-    // loop {
-    //     if let Some(p) = next_water_position(&walls, &still_water, maxy) {
-    //         println!("{:?}", p);
-    //         still_water.insert(p);
-    //     } else {
-    //         return t;
-    //     }
+    while let Some((x, y)) = current_path.pop() {
+        moving_water.insert((x, y));
 
-    //     t += 1;
-    // }
-    0
+        let bottom = (x, y + 1);
+        let bottom_in_still = still_water.contains(&bottom);
+        let bottom_in_moving = moving_water.contains(&bottom);
+        let bottom_in_walls = walls.contains(&bottom);
+
+        // de-stacks
+        if bottom_in_moving && !bottom_in_still {
+            current_path.pop();
+            continue;
+        }
+
+        // stacks down
+        if !bottom_in_walls && !bottom_in_still {
+            current_path.push(bottom);
+            continue;
+        }
+
+        let left = (x - 1, y);
+        let left_in_still = still_water.contains(&left);
+        let left_in_moving = moving_water.contains(&left);
+        let left_in_walls = walls.contains(&left);
+
+        let right = (x + 1, y);
+        let right_in_still = still_water.contains(&right);
+        let right_in_moving = moving_water.contains(&right);
+        let right_in_walls = walls.contains(&right);
+
+        // still_water
+        if (right_in_still || right_in_walls)
+    }
+
+    still_water
+        .union(&moving_water)
+        .collect::<Vec<&(usize, usize)>>()
+        .len() as i64
 }
 
 pub fn result_2(walls: InputType) -> i64 {
@@ -130,3 +118,51 @@ pub fn read_input(path: &str) -> InputType {
 
     set
 }
+
+// loop {
+//         let mut waters = vec![];
+//         waters.push((500, 0));
+//         let mut all_waters_dropped = true;
+//         let mut seen = HashSet::new();
+
+//         while let Some((x, y)) = waters.pop() {
+//             if y > maxy {
+//                 continue;
+//             }
+
+//             moving_water.insert((x, y));
+//             seen.insert((x, y));
+
+//             let bottom = (x, y + 1);
+//             let left = (x + 1, y);
+//             let right = (x - 1, y);
+//             let is_bottom_free =
+//                 !still_water.contains(&bottom) && !walls.contains(&bottom) && !seen.contains(&left);
+//             let is_left_free =
+//                 !still_water.contains(&left) && !walls.contains(&left) && !seen.contains(&left);
+//             let is_right_free =
+//                 !still_water.contains(&right) && !walls.contains(&right) && !seen.contains(&left);
+
+//             if is_bottom_free {
+//                 waters.push(bottom);
+//                 continue;
+//             }
+
+//             if !is_left_free && !is_right_free {
+//                 still_water.insert((x, y));
+//                 all_waters_dropped = false;
+//             }
+
+//             if is_left_free {
+//                 waters.push(left);
+//             }
+
+//             if is_right_free {
+//                 waters.push(right);
+//             }
+//         }
+
+//         if all_waters_dropped {
+//             break;
+//         }
+//     }

@@ -87,7 +87,6 @@ const f0 = ({ monkeys }: InputType): OutputType => {
   }
 
   inspections.sort((x, y) => x - y);
-
   return (
     inspections[inspections.length - 1] * inspections[inspections.length - 2]
   );
@@ -132,7 +131,6 @@ const f1 = ({ monkeys }: InputType): OutputType => {
   }
 
   inspections.sort((x, y) => x - y);
-
   return (
     inspections[inspections.length - 1] * inspections[inspections.length - 2]
   );
