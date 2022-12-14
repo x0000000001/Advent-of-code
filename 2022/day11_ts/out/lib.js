@@ -67,6 +67,7 @@ const f0 = ({ monkeys }) => {
         }
     }
     inspections.sort((x, y) => x - y);
+    console.log(inspections[inspections.length - 1], inspections[inspections.length - 2]);
     return (inspections[inspections.length - 1] * inspections[inspections.length - 2]);
 };
 const ppcm = (x, y) => {
