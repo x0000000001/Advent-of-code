@@ -146,20 +146,52 @@ fn run_intcode(prg: &mut Prg) {
     }
 }
 
+fn str_to_ascii(s: &str) -> Vec<i128> {
+    s.chars().map(|c| c as u8 as i128).collect()
+}
+
+fn print_ascii(l: &Vec<i128>) {
+    l.iter().for_each(|c| print!("{}", *c as u8 as char));
+}
+
 pub fn result_1(input: InputType) -> i64 {
     let instrs = input
         .into_iter()
         .enumerate()
         .collect::<HashMap<usize, i128>>();
+
     let mut prg = Prg {
         i: 0,
         relative_base: 0,
         instrs,
-        inputs: Vec::from([2]),
+        inputs: vec![],
         outputs: Vec::new(),
     };
 
+    let robot_prg = "\
+    NOT A J\n\n\
+    WALK\n\n\
+    ";
+
+    run_intcode(&mut prg);
+    print_ascii(&prg.outputs);
+    prg.outputs.clear();
+
+    prg.inputs = str_to_ascii(robot_prg);
+    run_intcode(&mut prg);
+    print_ascii(&prg.outputs);
+
+    // println!("{:?}", print_ascii(&str_to_ascii(robot_prg)));
+    // println!("{:?}", str_to_ascii(robot_prg));
+    // println!("{:?}", print_ascii(&Vec::from([65, 66, 67])));
+
+    if prg.outputs.len() > 1 {
+        print_ascii(&prg.outputs);
+        return 0;
+    }
+
     0
+    // prg.outputs[0] as i64
 }
 
 pub fn result_2(input: InputType) -> i64 {
