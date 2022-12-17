@@ -161,34 +161,33 @@ const f0 = ([valves, valve_aa_index]: InputType): OutputType => {
   while (queue.length !== 0) {
     let [valve, time, set, score] = queue.pop();
 
-    if (time === 0) {
-      max_score = Math.max(max_score, score);
-      continue;
-    } else if (time < 0) {
+    if (time < 0) {
       continue;
     }
 
-    if (set == all_non_zero_valves_opened) {
-      // all valves opened
-      max_score = Math.max(max_score, score);
+    max_score = Math.max(max_score, score);
+
+    if (set === all_non_zero_valves_opened) {
       continue;
     }
 
-    let neighbors = [];
-
-    if (valves.get(valve).flowRate !== 0 && !valve_set_contains(set, valve)) {
-      // opening valve
-      neighbors.push([
-        valve,
-        time - 1,
-        valve_set_add(set, valve),
-        score + (time - 1) * valves.get(valve).flowRate,
-      ]);
-    }
+    let neighbors: [Valve, Time, ValveSet, Score][] = [];
 
     // visiting neighbors
     for (const [n, distance] of valves.get(valve).links) {
-      neighbors.push([n, time - distance, set, score]);
+      if (time <= distance) {
+        continue;
+      }
+
+      // neighbors.push([n, time - distance, set, score]);
+      if (!valve_set_contains(set, n)) {
+        neighbors.push([
+          n,
+          time - distance - 1,
+          valve_set_add(set, n),
+          score + valves.get(n).flowRate * (time - distance - 1),
+        ]);
+      }
     }
 
     for (const neigh of neighbors) {
@@ -235,6 +234,7 @@ const f1 = ([valves, valve_aa_index]: InputType): OutputType => {
   let queue: [Valve, Time, boolean, ValveSet, Score][] = [];
 
   let hash = hash_state1(valve_aa_index, 26, true);
+
   scores.set(hash, new Map());
   scores.get(hash).set(0, 0);
   queue.push([valve_aa_index, 26, true, 0, 0]);
@@ -261,13 +261,13 @@ const f1 = ([valves, valve_aa_index]: InputType): OutputType => {
         continue;
       }
 
-      neighbors.push([
-        n,
-        time - distance,
-        first_player,
-        valve_set_add(set, n),
-        score,
-      ]);
+      // neighbors.push([
+      //   n,
+      //   time - distance,
+      //   first_player,
+      //   valve_set_add(set, n),
+      //   score,
+      // ]);
 
       if (!valve_set_contains(set, n)) {
         neighbors.push([
