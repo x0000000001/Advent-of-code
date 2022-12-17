@@ -112,36 +112,29 @@ const f0 = ([valves, valve_aa_index]) => {
     queue.push([valve_aa_index, 30, 0, 0]);
     let max_score = 0;
     while (queue.length !== 0) {
-        // queue.sort(
-        //   ([, time0, , score0], [, time1, , score1]) =>
-        //     (time1 - time0) * 10000 + (score0 - score1)
-        // );
         let [valve, time, set, score] = queue.pop();
-        if (time === 0) {
-            max_score = Math.max(max_score, score);
+        if (time < 0) {
             continue;
         }
-        else if (time < 0) {
-            continue;
-        }
-        if (set == all_non_zero_valves_opened) {
-            // all valves opened
-            max_score = Math.max(max_score, score);
+        max_score = Math.max(max_score, score);
+        if (set === all_non_zero_valves_opened) {
             continue;
         }
         let neighbors = [];
-        if (valves.get(valve).flowRate !== 0 && !valve_set_contains(set, valve)) {
-            // opening valve
-            neighbors.push([
-                valve,
-                time - 1,
-                valve_set_add(set, valve),
-                score + (time - 1) * valves.get(valve).flowRate,
-            ]);
-        }
         // visiting neighbors
         for (const [n, distance] of valves.get(valve).links) {
-            neighbors.push([n, time - distance, set, score]);
+            if (time <= distance) {
+                continue;
+            }
+            // neighbors.push([n, time - distance, set, score]);
+            if (!valve_set_contains(set, n)) {
+                neighbors.push([
+                    n,
+                    time - distance - 1,
+                    valve_set_add(set, n),
+                    score + valves.get(n).flowRate * (time - distance - 1),
+                ]);
+            }
         }
         for (const neigh of neighbors) {
             let hash = hash_state(neigh[0], neigh[1]);
@@ -178,10 +171,6 @@ const f1 = ([valves, valve_aa_index]) => {
     queue.push([valve_aa_index, 26, true, 0, 0]);
     let max_score = 0;
     while (queue.length !== 0) {
-        // queue.sort(
-        //   ([, time0, , score0], [, time1, , score1]) =>
-        //     (time1 - time0) * 10000 + (score0 - score1)
-        // );
         let [valve, time, first_player, set, score] = queue.pop();
         if (time < 0) {
             continue;
@@ -196,13 +185,13 @@ const f1 = ([valves, valve_aa_index]) => {
             if (time <= distance) {
                 continue;
             }
-            neighbors.push([
-                n,
-                time - distance,
-                first_player,
-                valve_set_add(set, n),
-                score,
-            ]);
+            // neighbors.push([
+            //   n,
+            //   time - distance,
+            //   first_player,
+            //   valve_set_add(set, n),
+            //   score,
+            // ]);
             if (!valve_set_contains(set, n)) {
                 neighbors.push([
                     n,
@@ -240,30 +229,4 @@ const f1 = ([valves, valve_aa_index]) => {
 ]);
 // 2233 too low
 (0, main_js_1.benchmark)(f0, f1);
-// const direct_non_nul_neighbors = (
-//   valves: Map<Valve, ValveData>,
-//   start: Valve
-// ): [Valve, number][] => {
-//   let direct_neighbors: [Valve, number][] = [];
-//   let scores: Map<Valve, number> = new Map();
-//   let queue: [Valve, number][] = [];
-//   queue.push([start, 0]);
-//   scores.set(start, 0);
-//   while (queue.length > 0) {
-//     queue.sort(([, score0], [, score1]) => score0 - score1);
-//     let [valve, score] = queue.pop();
-//     if (valve !== start && valves.get(valve).flowRate > 0) {
-//       direct_neighbors.push([valve, score]);
-//       continue;
-//     }
-//     for (const [n, _] of valves.get(valve).links) {
-//       if (scores.has(n) && scores.get(n) <= score + 1) {
-//         continue;
-//       }
-//       scores.set(n, score + 1);
-//       queue.push([n, score + 1]);
-//     }
-//   }
-//   return direct_neighbors;
-// };
 //# sourceMappingURL=lib.js.map
