@@ -17,6 +17,6 @@ fn ex_function(foo: fn(InputType) -> i64, name: &str, path: &str) {
 fn main() {
     ex_function(result_1, "test 1", TEST_PATH);
     ex_function(result_2, "test 2", TEST_PATH);
-    ex_function(result_1, "result 1", INPUT_PATH);
+    // ex_function(result_1, "result 1", INPUT_PATH);
     ex_function(result_2, "result 2", INPUT_PATH);
 }

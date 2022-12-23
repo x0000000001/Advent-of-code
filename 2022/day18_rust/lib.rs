@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    fs,
-};
+use std::{collections::HashSet, fs};
 
 pub type InputType = Vec<Position>;
 pub type Position = (usize, usize, usize);
