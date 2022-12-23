@@ -2,8 +2,6 @@ use day21_rust::*;
 use std::time::Instant;
 
 const INPUT_PATH: &str = "input.txt";
-const TEST_PATH: &str = "test_input.txt";
-
 fn ex_function(foo: fn(InputType) -> i64, name: &str, path: &str) {
     let now = Instant::now();
     let result = foo(read_input(path)) as i64;
