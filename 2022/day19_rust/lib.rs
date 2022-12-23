@@ -19,6 +19,7 @@ fn blueprint_score(
     bp: &Blueprint,
     seen: &mut HashMap<(Time, Ores, Robots), usize>,
     (time, ores, robots): &(Time, Ores, Robots),
+    global_max: &mut usize,
 ) -> usize {
     assert_eq!(ores.len(), 4);
     assert_eq!(robots.len(), 4);
@@ -28,65 +29,109 @@ fn blueprint_score(
     }
 
     let mut max = 0;
-    let new_ores = ores
-        .iter()
-        .enumerate()
-        .map(|(i, &o)| o + robots[i])
-        .collect::<Ores>();
-    let new_time = time - 1;
 
     let mut neighbors = vec![];
 
-    neighbors.push((new_time, new_ores.clone(), robots.clone()));
-
     for i in 0..4 {
-        if (0..4)
-            .map(|j| ores[j] >= bp.costs[i][j])
-            .reduce(|a, b| a && b)
-            .unwrap()
-        {
-            let n_ores = new_ores
-                .iter()
-                .enumerate()
-                .map(|(j, &o)| o - bp.costs[i][j])
-                .collect();
-            let mut n_robots = robots.clone();
-            n_robots[i] += 1;
+        let waiting_time = (0..4)
+            .map(|j| {
+                if bp.costs[i][j] <= ores[j] {
+                    0
+                } else {
+                    if robots[j] != 0 {
+                        let needed = bp.costs[i][j] - ores[j];
+                        needed / robots[j] + (needed % robots[j] != 0) as usize
+                    } else {
+                        usize::MAX - 2
+                    }
+                }
+            })
+            .max()
+            .unwrap();
 
-            neighbors.push((new_time, n_ores, n_robots));
+        if waiting_time >= *time {
+            continue;
         }
+
+        let n_ores: Ores = ores
+            .iter()
+            .enumerate()
+            .map(|(j, &o)| o + (waiting_time + 1) * robots[j] - bp.costs[i][j])
+            .collect();
+
+        let mut n_robots = robots.clone();
+        n_robots[i] += 1;
+
+        neighbors.push((*time - (waiting_time + 1), n_ores, n_robots));
     }
 
+    if neighbors.is_empty() {
+        neighbors.push((
+            0,
+            ores.iter()
+                .enumerate()
+                .map(|(i, &o)| o + time * robots[i])
+                .collect(),
+            robots.clone(),
+        ))
+    }
+
+    // print!("");
     for n in neighbors {
+        let max_geodes = n.1[3] + n.0 * n.2[3] + if n.0 > 1 { (n.0 - 2) * (n.0 - 1) } else { 0 };
+        if max_geodes < *global_max {
+            continue;
+        }
+
         let n_s;
         if let Some(&s) = seen.get(&n) {
             n_s = s;
         } else {
-            n_s = blueprint_score(bp, seen, &n);
+            n_s = blueprint_score(bp, seen, &n, global_max);
             seen.insert(n, n_s);
         }
         max = max.max(n_s);
     }
 
+    if max > *global_max {
+        *global_max = max;
+    }
+
     max
 }
 
+// 944 too low
 pub fn result_1(input: InputType) -> i64 {
     input
         .into_iter()
         .map(|bp| {
-            bp.id
-                * blueprint_score(
-                    &bp,
-                    &mut HashMap::new(),
-                    &(24, vec![0; 4], Vec::from([1, 0, 0, 0])),
-                )
+            let score = blueprint_score(
+                &bp,
+                &mut HashMap::new(),
+                &(24, vec![0; 4], Vec::from([1, 0, 0, 0])),
+                &mut 0,
+            );
+            println!("id {} score {}", bp.id, score);
+            bp.id * score
         })
         .sum::<usize>() as i64
 }
 
 pub fn result_2(input: InputType) -> i64 {
-    0
+    input
+        .into_iter()
+        .take(3)
+        .map(|bp| {
+            let score = blueprint_score(
+                &bp,
+                &mut HashMap::new(),
+                &(32, vec![0; 4], Vec::from([1, 0, 0, 0])),
+                &mut 0,
+            );
+            println!("id {} score {}", bp.id, score);
+            score
+        })
+        .product::<usize>() as i64
 }
 
 pub fn read_input(path: &str) -> InputType {
