@@ -168,18 +168,13 @@ pub fn result_1(input: InputType) -> i64 {
         outputs: Vec::new(),
     };
 
-    let robot_prg = "\
-    NOT A J\n\n\
-    WALK\n\n\
-    ";
-
-    run_intcode(&mut prg);
-    print_ascii(&prg.outputs);
-    prg.outputs.clear();
+    let robot_prg = "NOT A J\nWALK\n";
 
     prg.inputs = str_to_ascii(robot_prg);
     run_intcode(&mut prg);
-    print_ascii(&prg.outputs);
+
+    // run_intcode(&mut prg);
+    // print_ascii(&prg.outputs);
 
     // println!("{:?}", print_ascii(&str_to_ascii(robot_prg)));
     // println!("{:?}", str_to_ascii(robot_prg));
