@@ -276,3 +276,7 @@ cython_debug/
 
 # Go workspace file
 go.work
+
+# Added by cargo
+
+/target
