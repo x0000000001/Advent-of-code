@@ -151,7 +151,11 @@ fn str_to_ascii(s: &str) -> Vec<i128> {
 }
 
 fn print_ascii(l: &Vec<i128>) {
-    l.iter().for_each(|c| print!("{}", *c as u8 as char));
+    l.iter().for_each(|&c| {
+        if c < 256 {
+            print!("{}", c as u8 as char)
+        }
+    });
 }
 
 pub fn result_1(input: InputType) -> i64 {
@@ -168,29 +172,63 @@ pub fn result_1(input: InputType) -> i64 {
         outputs: Vec::new(),
     };
 
-    let robot_prg = "NOT A J\nWALK\n";
+    // jump if arrival is on ground and there are holes bin A, B or C
+    let robot_prg = "\
+    NOT C J\n\
+    NOT B T\n\
+    OR T J\n\
+    NOT A T\n\
+    OR T J\n\
+    AND D J\n\
+    WALK\n\
+    ";
 
     prg.inputs = str_to_ascii(robot_prg);
+    prg.inputs.reverse();
     run_intcode(&mut prg);
 
-    // run_intcode(&mut prg);
-    // print_ascii(&prg.outputs);
+    print_ascii(&prg.outputs);
 
-    // println!("{:?}", print_ascii(&str_to_ascii(robot_prg)));
-    // println!("{:?}", str_to_ascii(robot_prg));
-    // println!("{:?}", print_ascii(&Vec::from([65, 66, 67])));
-
-    if prg.outputs.len() > 1 {
-        print_ascii(&prg.outputs);
-        return 0;
-    }
-
-    0
-    // prg.outputs[0] as i64
+    *prg.outputs.last().unwrap() as i64
 }
 
 pub fn result_2(input: InputType) -> i64 {
-    0
+    let instrs = input
+        .into_iter()
+        .enumerate()
+        .collect::<HashMap<usize, i128>>();
+
+    let mut prg = Prg {
+        i: 0,
+        relative_base: 0,
+        instrs,
+        inputs: vec![],
+        outputs: Vec::new(),
+    };
+
+    // jump if arrival is on ground and there are holes bin A, B or C
+    // and if not obliged to jump in void after arrival (= void on E and H)
+    let robot_prg = "\
+    NOT C J\n\
+    NOT B T\n\
+    OR T J\n\
+    NOT A T\n\
+    OR T J\n\
+    AND D J\n\
+    NOT H T\n\
+    NOT T T\n\
+    OR E T\n\
+    AND T J\n\
+    RUN\n\
+    ";
+
+    prg.inputs = str_to_ascii(robot_prg);
+    prg.inputs.reverse();
+    run_intcode(&mut prg);
+
+    print_ascii(&prg.outputs);
+
+    *prg.outputs.last().unwrap() as i64
 }
 
 pub fn read_input(path: &str) -> InputType {
