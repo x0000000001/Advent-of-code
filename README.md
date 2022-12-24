@@ -16,7 +16,7 @@ When coding in python, I will aim to do [golfing](https://fr.wikipedia.org/wiki/
 *2019* **JavaScript/TypeScript** and **Rust** \
 *2020* **JavaScript/TypeScript** and **Go** and **Rust** *finsihed*\
 *2021* **Rust** *finsihed*\
-*2022*
+*2022* 8 days in **Go**, 8 in **TypeScript**, and 9 in **Rust**\ 
 
 ## Challenges that have caused me some problems/ that I have failed to do alone
 
