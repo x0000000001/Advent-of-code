@@ -6,7 +6,7 @@ const BASE_PATTERN: [i64; 4] = [0, 1, 0, -1];
 
 type Matrix = Vec<Vec<i64>>;
 
-fn matrix_mul(m0: &Matrix, m1: &Matrix) -> Matrix {
+fn suptriang_matrix_mul(m0: &Matrix, m1: &Matrix) -> Matrix {
     assert!(m0[0].len() == m1.len());
     let n = m1.len();
     let h = m0.len();
@@ -15,7 +15,7 @@ fn matrix_mul(m0: &Matrix, m1: &Matrix) -> Matrix {
     (0..h)
         .map(|i| {
             (0..w)
-                .map(|j| (0..n).map(|k| m0[i][k] * m1[k][j]).sum())
+                .map(|j| (i..n).map(|k| m0[i][k] * m1[k][j]).sum())
                 .collect()
         })
         .collect()
@@ -32,7 +32,7 @@ fn matrix_fast_exp(m: &Matrix, n: usize, modulo: i64) -> Matrix {
 
     let temp_mat = matrix_fast_exp(m, n / 2, modulo);
 
-    let mut res = matrix_mul(&temp_mat, &temp_mat);
+    let mut res = suptriang_matrix_mul(&temp_mat, &temp_mat);
 
     for i in 0..res.len() {
         for j in 0..m[0].len() {
@@ -41,7 +41,7 @@ fn matrix_fast_exp(m: &Matrix, n: usize, modulo: i64) -> Matrix {
     }
 
     if n % 2 == 1 {
-        res = matrix_mul(&res, m);
+        res = suptriang_matrix_mul(&res, m);
     }
 
     for i in 0..res.len() {
@@ -72,7 +72,7 @@ fn iter_fft(input: &Matrix, steps: usize) -> Matrix {
     let mut pattern_m = pattern_matrix(length);
     pattern_m = matrix_fast_exp(&pattern_m, steps, 10);
 
-    matrix_mul(&pattern_m, input)
+    suptriang_matrix_mul(&pattern_m, input)
 }
 
 pub fn result_1(input: InputType) -> i64 {
