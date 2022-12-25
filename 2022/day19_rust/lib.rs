@@ -32,7 +32,25 @@ fn blueprint_score(
 
     let mut neighbors = vec![];
 
-    for i in 0..4 {
+    for i in (0..4).rev() {
+        // optimization 2
+        // three first ressources are used only to build other robots
+        // it is therefore useless to have more robots of one of this type
+        // than the maximum ressources needed to build other robots
+        // (since we can produce only 1 robot per round)
+        // 60s -> 3s
+        if i != 3 {
+            let has_enough = (0..4)
+                .map(|robot_id| robot_id == i || bp.costs[robot_id][i] <= robots[i])
+                .reduce(|acc, b| acc && b)
+                .unwrap();
+
+            if has_enough {
+                continue;
+            }
+        }
+        //
+
         let waiting_time = (0..4)
             .map(|j| {
                 if bp.costs[i][j] <= ores[j] {
@@ -63,6 +81,14 @@ fn blueprint_score(
         n_robots[i] += 1;
 
         neighbors.push((*time - (waiting_time + 1), n_ores, n_robots));
+
+        // optimization 1
+        // if we can build a geode robot without waiting, useless to explore other paths
+        // than building a geode robot (since we can produce only 1 per round)
+        // 300s -> 60s
+        if i == 3 && waiting_time == 0 {
+            continue;
+        }
     }
 
     if neighbors.is_empty() {
