@@ -215,7 +215,62 @@ pub fn result_1(input: InputType) -> i64 {
     sum_inter(&grid) as i64
 }
 
+enum Order {
+    Forward(usize),
+    R,
+    L,
+}
+
+fn get_path(map: &Vec<Vec<usize>>) -> Vec<Order> {
+    let mut p = vec![];
+    let (h,w) = (map.len(), map[0].len());
+
+    let (mut x, mut y) = (0, 0);
+    let mut orientation = 0;
+
+    for i in 0..
+
+    p
+}
+
 pub fn result_2(input: InputType) -> i64 {
+    let instrs = input
+        .into_iter()
+        .enumerate()
+        .collect::<HashMap<usize, i128>>();
+
+    let mut prg = Prg {
+        i: 0,
+        relative_base: 0,
+        instrs: instrs,
+        inputs: Vec::new(),
+        outputs: Vec::new(),
+    };
+
+    run_intcode(&mut prg);
+
+    let s = prg.outputs.iter().fold("".to_string(), |acc, i| {
+        format!("{}{}", acc, char::from(*i as u8))
+    });
+
+    let grid: Vec<Vec<usize>> = s
+        .split("\n")
+        .map(|l| {
+            l.chars()
+                .map(|c| match c {
+                    '#' => 2000,
+                    '.' => 1000,
+                    '^' => 0,
+                    '>' => 1,
+                    'v' => 2,
+                    '<' => 3,
+                    _ => panic!(),
+                })
+                .collect::<Vec<usize>>()
+        })
+        .filter(|l| l.len() != 0)
+        .collect();
+
     0
 }
 
