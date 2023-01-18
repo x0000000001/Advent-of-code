@@ -13,5 +13,5 @@ Run the player, then the elephant on the set of remaining unopened valves.
 
 My current solutions run in < 50ms, which I am very proud of.
 
-(However, I repeat that **these don't work on the given examples**).
+(However, I repeat that **these don't work on the given examples**.) \
 (It seems that without all the optimisations, two parts run in about 30s and are correct.)
