@@ -5,7 +5,7 @@ My codes for the challenges of adventofcode.com
 ## My plan for 2022
 
 A mix of python, go, rust and typescript.
-When coding in python, I will aim to do [golfing](https://fr.wikipedia.org/wiki/Code_golf).
+When coding in python, I like to do [golfing](https://fr.wikipedia.org/wiki/Code_golf).
 
 ## Which year in which language ?
 
