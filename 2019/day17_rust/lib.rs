@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use std::{collections::HashMap, fs};
 
 pub type InputType = Vec<i128>;
@@ -172,6 +173,29 @@ fn sum_inter(grid: &Vec<Vec<usize>>) -> usize {
     sum
 }
 
+fn grid_from_prg(prg: &Prg) -> Vec<Vec<usize>> {
+    let s = prg.outputs.iter().fold("".to_string(), |acc, i| {
+        format!("{}{}", acc, char::from(*i as u8))
+    });
+
+    s.split("\n")
+        .map(|l| {
+            l.chars()
+                .map(|c| match c {
+                    '#' => 2000,
+                    '.' => 1000,
+                    '^' => 0,
+                    '>' => 1,
+                    'v' => 2,
+                    '<' => 3,
+                    _ => panic!(),
+                })
+                .collect::<Vec<usize>>()
+        })
+        .filter(|l| l.len() != 0)
+        .collect()
+}
+
 pub fn result_1(input: InputType) -> i64 {
     let instrs = input
         .into_iter()
@@ -187,30 +211,7 @@ pub fn result_1(input: InputType) -> i64 {
     };
 
     run_intcode(&mut prg);
-
-    let s = prg.outputs.iter().fold("".to_string(), |acc, i| {
-        format!("{}{}", acc, char::from(*i as u8))
-    });
-
-    let grid = s
-        .split("\n")
-        .map(|l| {
-            l.chars()
-                .map(|c| match c {
-                    '#' => 2000,
-                    '.' => 1000,
-                    '^' => 0,
-                    '>' => 1,
-                    'v' => 2,
-                    '<' => 3,
-                    _ => panic!(),
-                })
-                .collect::<Vec<usize>>()
-        })
-        .filter(|l| l.len() != 0)
-        .collect();
-
-    println!("{}", s);
+    let grid = grid_from_prg(&prg);
 
     sum_inter(&grid) as i64
 }
@@ -221,23 +222,50 @@ enum Order {
     L,
 }
 
+enum Orientation {
+    Left,
+    Top,
+    Right,
+    Bottom,
+}
+
 fn get_path(map: &Vec<Vec<usize>>) -> Vec<Order> {
     let mut p = vec![];
-    let (h,w) = (map.len(), map[0].len());
+    let (h, w) = (map.len(), map[0].len());
 
     let (mut x, mut y) = (0, 0);
-    let mut orientation = 0;
+    let mut orientation = Orientation::Top;
+    let orientations = ['>', '<', 'v', '^'].map(|c| c);
 
-    for i in 0..
+    for (i, j) in (0..h).cartesian_product(0..w) {
+        if (orientations.contains(map[i][j])) {}
+    }
+
+    todo!();
 
     p
 }
 
 pub fn result_2(input: InputType) -> i64 {
-    let instrs = input
+    let init_instrs = input
         .into_iter()
         .enumerate()
         .collect::<HashMap<usize, i128>>();
+
+    let mut instrs = init_instrs.clone();
+    assert!(instrs[&0usize] == 1);
+    instrs.insert(0usize, 2);
+
+    let mut init_prg = Prg {
+        i: 0,
+        relative_base: 0,
+        instrs: init_instrs,
+        inputs: Vec::new(),
+        outputs: Vec::new(),
+    };
+
+    run_intcode(&mut init_prg);
+    let grid = grid_from_prg(&init_prg);
 
     let mut prg = Prg {
         i: 0,
@@ -246,30 +274,6 @@ pub fn result_2(input: InputType) -> i64 {
         inputs: Vec::new(),
         outputs: Vec::new(),
     };
-
-    run_intcode(&mut prg);
-
-    let s = prg.outputs.iter().fold("".to_string(), |acc, i| {
-        format!("{}{}", acc, char::from(*i as u8))
-    });
-
-    let grid: Vec<Vec<usize>> = s
-        .split("\n")
-        .map(|l| {
-            l.chars()
-                .map(|c| match c {
-                    '#' => 2000,
-                    '.' => 1000,
-                    '^' => 0,
-                    '>' => 1,
-                    'v' => 2,
-                    '<' => 3,
-                    _ => panic!(),
-                })
-                .collect::<Vec<usize>>()
-        })
-        .filter(|l| l.len() != 0)
-        .collect();
 
     0
 }
