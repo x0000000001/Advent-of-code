@@ -15,6 +15,5 @@
 ## 2019
 
 * 16 : flawed frequency transmission
-* 17 : set and forget
 * 18 : many-worlds interpretation
 
