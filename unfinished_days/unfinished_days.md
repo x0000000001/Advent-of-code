@@ -14,6 +14,5 @@
 
 ## 2019
 
-* 16 : flawed frequency transmission
 * 18 : many-worlds interpretation
 

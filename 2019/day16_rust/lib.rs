@@ -4,93 +4,133 @@ pub type InputType = Vec<i64>;
 
 const BASE_PATTERN: [i64; 4] = [0, 1, 0, -1];
 
-type Matrix = Vec<Vec<i64>>;
+fn one_pass(input: &Vec<i64>, receiver: &mut Vec<i64>) {
+    assert!(receiver.len() == input.len());
+    let n = input.len();
 
-fn suptriang_matrix_mul(m0: &Matrix, m1: &Matrix) -> Matrix {
-    assert!(m0[0].len() == m1.len());
-    let n = m1.len();
-    let h = m0.len();
-    let w = m1[0].len();
-
-    (0..h)
-        .map(|i| {
-            (0..w)
-                .map(|j| (i..n).map(|k| m0[i][k] * m1[k][j]).sum())
-                .collect()
-        })
-        .collect()
-}
-
-fn matrix_fast_exp(m: &Matrix, n: usize, modulo: i64) -> Matrix {
-    if n == 0 {
-        let mut mid = vec![vec![0; m.len()]; m.len()];
-        for i in 0..m.len() {
-            mid[i][i] = 1;
+    for i in 0..n {
+        let mut s = 0;
+        for j in i..n {
+            s += BASE_PATTERN[((j + 1) / (i + 1)) % 4] * input[j];
         }
-        return mid;
+        receiver[i] = (s % 10).abs();
     }
-
-    let temp_mat = matrix_fast_exp(m, n / 2, modulo);
-
-    let mut res = suptriang_matrix_mul(&temp_mat, &temp_mat);
-
-    for i in 0..res.len() {
-        for j in 0..m[0].len() {
-            res[i][j] %= modulo;
-        }
-    }
-
-    if n % 2 == 1 {
-        res = suptriang_matrix_mul(&res, m);
-    }
-
-    for i in 0..res.len() {
-        for j in 0..m[0].len() {
-            res[i][j] %= modulo;
-        }
-    }
-
-    print!("");
-
-    res
 }
 
-fn pattern_matrix(length: usize) -> Matrix {
-    let mut m = vec![vec![0; length]; length];
+fn apply_n_passes(input: &mut Vec<i64>, n: usize) {
+    let d = input.len();
 
-    for i in 0..length {
-        for j in i..length {
-            m[i][j] = BASE_PATTERN[((j + 1) / (i + 1)) % 4];
-        }
+    let mut b0 = input.clone();
+    let mut b1 = vec![0; d];
+    let mut b0_ptr = &mut b0;
+    let mut b1_ptr = &mut b1;
+
+    for _ in 0..n {
+        one_pass(b0_ptr, b1_ptr);
+        let temp = b0_ptr;
+        b0_ptr = b1_ptr;
+        b1_ptr = temp;
     }
 
-    m
+    for i in 0..d {
+        input[i] = b0_ptr[i];
+    }
 }
 
-fn iter_fft(input: &Matrix, steps: usize) -> Matrix {
-    let length = input.len();
-    let mut pattern_m = pattern_matrix(length);
-    pattern_m = matrix_fast_exp(&pattern_m, steps, 10);
-
-    suptriang_matrix_mul(&pattern_m, input)
+pub fn result_1(mut input: InputType) -> i64 {
+    apply_n_passes(&mut input, 100);
+    input[0..8].into_iter().fold(0, |acc, b| acc * 10 + b)
 }
 
-pub fn result_1(input: InputType) -> i64 {
-    let mut output: Matrix = input.into_iter().map(|e| Vec::from([e])).collect();
-    output = iter_fft(&output, 100);
-    output[0..8].into_iter().fold(0, |acc, b| acc * 10 + b[0])
-}
+/// SMARTER WAY TO DO THIS \
+/// I've not been to the end of this solution on my own,
+/// so I've let my incomplete code commented below my final solution.
+///
+/// It turns out final coefficients are binomial coefficients.
+/// They just blow up with the fft iterations count and the size of the input.
+/// What we want to do, is calculate these coefficients mod 10.
+/// It turns out this isn't trivial, you need [Luca's theorem](https://en.wikipedia.org/wiki/Lucas%27s_theorem).
+///
+/// Sources : (very elegant soolutions, worth to check) \
+/// https://old.reddit.com/r/adventofcode/comments/ebb8w6/2019_day_16_part_three_a_fanfiction_by_askalski/ \
+/// https://gist.github.com/alexanderhaupt/1ac31ecbd316aca32c469f42d8646c98
 
 pub fn result_2(input: InputType) -> i64 {
+    println!("2019/DAY16 : THERE IS A SMARTER WAY TO DO THIS, READ COMMENTS FOR DETAILS");
+
+    let input = input
+        .into_iter()
+        .map(|x| x as usize)
+        .collect::<Vec<usize>>();
+
     let offset = input[0..7].into_iter().fold(0, |acc, b| acc * 10 + b) as usize;
     let length = input.len() * 10000 - offset;
+    println!("{} {}", length, input.len());
+
     let mut l = vec![0; length];
 
-    for i in offset..input.len() {
-        l[i - offset] = input[i % input.len()];
+    for i in 0..length {
+        l[i] = input[(offset + i) % input.len()];
     }
 
-    0
+    for _ in 0..100 {
+        let mut s: usize = l.iter().sum();
+        for i in 0..length {
+            let temp = l[i];
+            l[i] = s % 10;
+            s -= temp;
+        }
+
+        assert!(s == 0);
+    }
+
+    l[0..8].into_iter().fold(0, |acc, b| acc * 10 + *b as i64)
+
+    // let input = input
+    //     .into_iter()
+    //     .map(|x| x as usize)
+    //     .collect::<Vec<usize>>();
+
+    // let offset = input[0..7].into_iter().fold(0, |acc, b| acc * 10 + b) as usize;
+    // let length = input.len() * 10000 - offset;
+    // println!("{} {}", length, input.len());
+
+    // let mut magic_values = vec![1];
+    // // let mut magic_values1 = vec![1];
+
+    // for i in 1..length {
+    //     magic_values
+    //         .push((magic_values[i - 1] * (100 - 1 + i) / i) % (10 * (100 - 1 + i) * (i + 1)));
+    //     // magic_values1.push((magic_values[i - 1] * (100 - 1 + i) / i));
+    // }
+
+    // // for i in 0..5 {
+    // //     for j in 0..5 {
+    // //         if j < i {
+    // //             print!("  ");
+    // //         } else {
+    // //             print!("{} ", magic_values1[j - i]);
+    // //         }
+    // //     }
+    // //     println!();
+    // // }
+
+    // // for (i, j) in magic_values.iter().zip(magic_values1.iter()) {
+    // //     print!("{} {}  |  ", i, j);
+    // // }
+
+    // for i in 0..8 {
+    //     let mut s = 0;
+    //     for j in 0..(length - i) {
+    //         s = (s + magic_values[j] * input[(offset + i + j) % input.len()]) % 10;
+    //     }
+
+    //     println!("{}", s);
+    // }
+
+    // println!();
+
+    // 0
 }
 
 pub fn read_input(path: &str) -> InputType {
@@ -108,117 +148,3 @@ pub fn read_input(path: &str) -> InputType {
         .map(|c| c.to_string().parse().unwrap())
         .collect()
 }
-
-// pub fn result_1(mut input: InputType) -> i64 {
-//     let mut buffer0 = &mut input;
-//     let mut buffer1 = &mut vec![0; buffer0.len()];
-
-//     for _ in 0..100 {
-//         for i in 0..buffer0.len() {
-//             let mut sum = 0;
-//             for j in 0..buffer0.len() {
-//                 sum += BASE_PATTERN[((j + 1) / (i + 1)) % 4] * (*buffer0)[j];
-//             }
-//             (*buffer1)[i] = (sum % 10).abs();
-//         }
-
-//         let temp = buffer0;
-//         buffer0 = buffer1;
-//         buffer1 = temp;
-//     }
-
-//     input[0..8].into_iter().fold(0, |acc, b| acc * 10 + b)
-// }
-
-// pub fn result_2(input: InputType) -> i64 {
-//     let offset = input[0..7].into_iter().fold(0, |acc, b| acc * 10 + b) as usize;
-//     let length = input.len() * 10000 - offset;
-//     let mut l = vec![0; length];
-
-//     for i in offset..input.len() {
-//         l[i - offset] = input[i % input.len()];
-//     }
-
-//     let mut buffer0 = &mut l;
-//     let mut buffer1 = &mut vec![0; buffer0.len()];
-
-//     for k in 0..100 {
-//         println!("{}", k);
-//         for i in 0..buffer0.len() {
-//             let mut sum = 0;
-//             for j in 0..buffer0.len() {
-//                 sum += BASE_PATTERN[((j + 1) / (i + 1)) % 4] * (*buffer0)[j];
-//             }
-//             (*buffer1)[i] = (sum % 10).abs();
-//         }
-
-//         let temp = buffer0;
-//         buffer0 = buffer1;
-//         buffer1 = temp;
-//     }
-
-//     l[0..8].into_iter().fold(0, |acc, b| acc * 10 + b)
-// }
-
-// fn run(input: &mut InputType, n: usize) {
-//     let mut buffer = &mut vec![0; input.len()];
-
-//     for _ in 0..n {
-//         for i in input.len() {}
-
-//         let temp = input;
-//         input = buffer;
-//         buffer = temp;
-//     }
-// }
-
-// pub fn result_2(input: InputType) -> i64 {
-//     // let offset = input[0..7].into_iter().fold(0, |acc, b| acc * 10 + b) as usize;
-//     // let length = input.len() * 10000 - offset;
-//     let offset = 0;
-//     let length = input.len();
-//     let mut l = vec![0; length];
-
-//     for i in offset..input.len() {
-//         l[i - offset] = input[i % input.len()];
-//     }
-
-//     // this list store the results of (index ^ 10000) % 10
-//     let mods = (0..10)
-//         .map(|i| {
-//             let mut current = i;
-//             let mut seen = vec![i; 1];
-
-//             loop {
-//                 current *= i;
-//                 current %= 10;
-
-//                 if seen[0] == current {
-//                     break;
-//                 }
-
-//                 seen.push(current);
-//             }
-
-//             return seen[(100 - 1) % seen.len()];
-//         })
-//         .collect::<Vec<i64>>();
-
-//     let mut result = vec![0; l.len()];
-//     let mut sums = vec![0; l.len()];
-//     let mut current_sum = 0;
-
-//     for i in (0..result.len()).rev() {
-//         result[i] = ((i..result.len())
-//             // todo
-//             .map(|j| mods[l[j] as usize] * BASE_PATTERN[((j + 1) / (i + 1)) % 4])
-//             .sum::<i64>()
-//             % 10)
-//             .abs();
-//         current_sum += result[i];
-//         sums[i] = current_sum;
-//     }
-
-//     result[0..8].into_iter().fold(0, |acc, b| acc * 10 + b)
-//     0
-// }
