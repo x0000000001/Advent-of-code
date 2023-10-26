@@ -1,4 +1,6 @@
-use std::{collections::VecDeque, fs, io::stdin};
+use std::collections::BinaryHeap;
+use std::fs;
+use std::ops;
 
 pub type InputType = Vec<NanoBot>;
 
@@ -8,94 +10,256 @@ pub struct Point(i64, i64, i64);
 #[derive(Debug)]
 pub struct NanoBot {
     pos: Point,
-    radius: i64,
+    radius: usize,
 }
 
-fn manhattan(Point(x0, y0, z0): &Point, Point(x1, y1, z1): &Point) -> i64 {
-    (x0 - x1).abs() + (y0 - y1).abs() + (z0 - z1).abs()
+impl ops::Add<i64> for Point {
+    type Output = Point;
+
+    fn add(self, rhs: i64) -> Self::Output {
+        Point(self.0 + rhs, self.1 + rhs, self.2 + rhs)
+    }
+}
+
+impl ops::Add<Point> for Point {
+    type Output = Point;
+
+    fn add(self, p: Point) -> Self::Output {
+        Point(self.0 + p.0, self.1 + p.1, self.2 + p.2)
+    }
+}
+
+impl Point {
+    fn is_in_cube(&self, cube: &Cube) -> bool {
+        self.0 >= cube.bbb.0
+            && self.0 <= cube.tbb.0
+            && self.1 >= cube.bbb.1
+            && self.1 <= cube.btb.1
+            && self.2 >= cube.bbb.2
+            && self.2 <= cube.bbt.2
+    }
+}
+
+fn manhattan(Point(x0, y0, z0): &Point, Point(x1, y1, z1): &Point) -> usize {
+    ((x0 - x1).abs() + (y0 - y1).abs() + (z0 - z1).abs()) as usize
 }
 
 fn is_in_range(ref_nanobot: &NanoBot, nanobot: &NanoBot) -> bool {
     manhattan(&ref_nanobot.pos, &nanobot.pos) <= ref_nanobot.radius
 }
 
-pub fn result_1(input: InputType) -> i64 {
+fn powerful_nanobot_score(input: &InputType) -> usize {
     let powerful_nanobot = input.iter().max_by_key(|n| n.radius).unwrap();
 
     input
         .iter()
         .filter(|n| is_in_range(powerful_nanobot, n))
-        .count() as i64
+        .count()
 }
 
-impl NanoBot {
-    pub fn center(nanobots: &Vec<&NanoBot>) -> Point {
-        let (sumx, sumy, sumz) = nanobots.iter().fold((0, 0, 0), |(acc0, acc1, acc2), n| {
-            (acc0 + n.pos.0, acc1 + n.pos.1, acc2 + n.pos.2)
-        });
+pub fn result_1(nanobots: InputType) -> i64 {
+    powerful_nanobot_score(&nanobots) as i64
+}
 
-        let l = nanobots.len() as i64;
+#[derive(Debug)]
+struct Cube {
+    //xyz
+    bbb: Point,
+    bbt: Point,
+    btb: Point,
+    btt: Point,
+    tbb: Point,
+    tbt: Point,
+    ttb: Point,
+    ttt: Point,
+    x_width: usize,
+    y_width: usize,
+    z_width: usize,
+    max_possible_radius: usize,
+}
 
-        Point(sumx / l, sumy / l, sumz / l)
+impl Cube {
+    fn from(bottom: Point, xwidth: usize, ywidth: usize, zwidth: usize) -> Cube {
+        Cube {
+            bbb: bottom,
+            bbt: Point(bottom.0, bottom.1, bottom.2 + zwidth as i64),
+            btb: Point(bottom.0, bottom.1 + ywidth as i64, bottom.2),
+            btt: Point(bottom.0, bottom.1 + ywidth as i64, bottom.2 + zwidth as i64),
+            tbb: Point(bottom.0 + xwidth as i64, bottom.1, bottom.2),
+            tbt: Point(bottom.0 + xwidth as i64, bottom.1, bottom.2 + zwidth as i64),
+            ttb: Point(bottom.0 + xwidth as i64, bottom.1 + ywidth as i64, bottom.2),
+            ttt: Point(
+                bottom.0 + xwidth as i64,
+                bottom.1 + ywidth as i64,
+                bottom.2 + xwidth as i64,
+            ),
+            x_width: xwidth,
+            y_width: ywidth,
+            z_width: zwidth,
+            max_possible_radius: xwidth + ywidth + zwidth,
+        }
     }
 
-    pub fn is_center_contained(nanobots: &Vec<&NanoBot>) -> bool {
-        let center = NanoBot::center(nanobots);
-        let mut b = true;
+    fn edges<'a>(&'a self) -> impl Iterator<Item = &'a Point> {
+        [
+            &self.bbb, &self.bbt, &self.btb, &self.btt, &self.tbb, &self.tbt, &self.ttb, &self.ttt,
+        ]
+        .into_iter()
+    }
 
-        for n in nanobots.iter() {
-            if manhattan(&center, &n.pos) > n.radius {
-                b = false;
-                break;
+    fn split(&self) -> Vec<Cube> {
+        assert!(!self.is_point());
+
+        let xwidths = [self.x_width / 2, self.x_width - (self.x_width / 2)];
+        let ywidths = [self.y_width / 2, self.y_width - (self.y_width / 2)];
+        let zwidths = [self.z_width / 2, self.z_width - (self.z_width / 2)];
+        let mut children = vec![];
+
+        for i in 0..2 {
+            for j in 0..2 {
+                for k in 0..2 {
+                    children.push(Cube::from(
+                        Point(
+                            self.bbb.0 + i as i64 * xwidths[i] as i64,
+                            self.bbb.1 + j as i64 * ywidths[j] as i64,
+                            self.bbb.2 + k as i64 * zwidths[k] as i64,
+                        ),
+                        xwidths[i],
+                        ywidths[j],
+                        zwidths[k],
+                    ));
+                }
             }
         }
 
-        b
+        children
+    }
+
+    fn is_point(&self) -> bool {
+        self.x_width == 0 && self.y_width == 0 && self.z_width == 0
     }
 }
 
-pub fn max_combination<'a>(nanobots: &Vec<&'a NanoBot>) -> Vec<&'a NanoBot> {
-    if nanobots.len() % 100 == 0 {
-        println!("{:?}", nanobots.len());
-    }
-    if nanobots.len() == 1 {
-        return nanobots.clone();
+impl NanoBot {
+    fn touches_point(&self, point: &Point) -> bool {
+        manhattan(&self.pos, point) <= self.radius
     }
 
-    if NanoBot::is_center_contained(nanobots) {
-        return nanobots.clone();
+    // touches, contains
+    fn touches_or_contains_cube(&self, cube: &Cube) -> (bool, bool) {
+        let contacts = cube.edges().map(|e| self.touches_point(e));
+
+        let mut can_touch_cube = self.pos.is_in_cube(cube);
+
+        if !can_touch_cube {
+            let max_distance = cube.edges().map(|e| manhattan(e, &self.pos)).max().unwrap();
+            if max_distance <= self.radius + cube.max_possible_radius {
+                can_touch_cube = true;
+            }
+        }
+
+        (can_touch_cube, contacts.fold(true, |acc, b| acc && b))
+    }
+}
+
+#[derive(Debug)]
+struct CubeScore {
+    cube: Cube,
+    parent_nanobots_touched: usize,
+}
+
+impl PartialEq for CubeScore {
+    fn eq(&self, other: &Self) -> bool {
+        self.parent_nanobots_touched == other.parent_nanobots_touched
+    }
+}
+
+impl Eq for CubeScore {}
+
+impl PartialOrd for CubeScore {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.parent_nanobots_touched
+            .partial_cmp(&other.parent_nanobots_touched)
+    }
+}
+
+impl Ord for CubeScore {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.parent_nanobots_touched
+            .cmp(&other.parent_nanobots_touched)
+    }
+}
+
+fn optimal_position(nanobots: &InputType) -> usize {
+    let mut minimum = 0; //873;
+    let (xmin, xmax, ymin, ymax, zmin, zmax) = nanobots.iter().fold(
+        (i64::MAX, i64::MIN, i64::MAX, i64::MIN, i64::MAX, i64::MIN),
+        |(xmin, xmax, ymin, ymax, zmin, zmax), n| {
+            (
+                xmin.min(n.pos.0),
+                xmax.max(n.pos.0),
+                ymin.min(n.pos.1),
+                ymax.max(n.pos.1),
+                zmin.min(n.pos.2),
+                zmax.max(n.pos.2),
+            )
+        },
+    );
+
+    let mut optimal_distance = usize::MAX;
+    let mut queue: BinaryHeap<CubeScore> = BinaryHeap::new();
+
+    queue.push(CubeScore {
+        cube: Cube::from(
+            Point(xmin, ymin, zmin),
+            (xmax - xmin) as usize,
+            (ymax - ymin) as usize,
+            (zmax - zmin) as usize,
+        ),
+        parent_nanobots_touched: 0,
+    });
+
+    while let Some(CubeScore {
+        cube: candidate,
+        parent_nanobots_touched: _,
+    }) = queue.pop()
+    {
+        let (nanobots_touched, nanobots_contained) = nanobots
+            .iter()
+            .map(|n| n.touches_or_contains_cube(&candidate))
+            .fold((0, 0), |(touched, contained), (t, c)| {
+                (touched + t as usize, contained + c as usize)
+            });
+
+        if nanobots_touched < minimum {
+            continue;
+        }
+
+        if nanobots_contained > minimum {
+            minimum = nanobots_contained;
+            optimal_distance = usize::MAX;
+        }
+
+        if candidate.is_point() {
+            if nanobots_contained == minimum {
+                optimal_distance = manhattan(&candidate.bbb, &Point(0, 0, 0)).min(optimal_distance);
+            }
+        } else {
+            for c in candidate.split() {
+                queue.push(CubeScore {
+                    cube: c,
+                    parent_nanobots_touched: nanobots_touched,
+                });
+            }
+        }
     }
 
-    let mut others = nanobots.clone();
-    let last_nanobot = others.pop().unwrap();
-    let best_combination_without_last = max_combination(&others);
-
-    let mut touching_nanobots: Vec<&NanoBot> = others
-        .into_iter()
-        .filter(|n| manhattan(&n.pos, &last_nanobot.pos) <= n.radius + last_nanobot.radius)
-        .collect();
-
-    touching_nanobots.push(last_nanobot);
-
-    if touching_nanobots.len() == nanobots.len() {
-        return nanobots.clone();
-    }
-
-    let best_combination_with_last = max_combination(&touching_nanobots);
-
-    if best_combination_with_last.len() > best_combination_without_last.len() {
-        best_combination_with_last
-    } else {
-        best_combination_without_last
-    }
+    optimal_distance
 }
 
 // 416618662 too high
 pub fn result_2(nanobots: InputType) -> i64 {
-    let c = max_combination(&nanobots.iter().collect());
-    println!("{:?}", c);
-
-    c.len() as i64
+    optimal_position(&nanobots) as i64
 }
 
 pub fn read_input(path: &str) -> InputType {
@@ -121,210 +285,3 @@ pub fn read_input(path: &str) -> InputType {
         .map(|l| parse_line(&l))
         .collect()
 }
-
-// FIRST TRY
-
-/*
-
-let origin = Point(0, 0, 0);
-    let mut queue = VecDeque::new();
-    queue.push_back(find_biggest_zone(&nanobots));
-    let mut current_min = i64::MAX;
-    let mut max_score = 0;
-    let mut i = 0;
-    let mut zonee = Zone {
-        bottom_left: Point(0, 0, 0),
-        x_length: 0,
-        y_length: 0,
-        z_length: 0,
-    };
-
-    let mut t = String::new();
-
-    while let Some(zone) = queue.pop_front() {
-        i += 1;
-        let score = nanobots_containing_zone(&nanobots, &zone);
-        let potential_score = nanobots_touching_zone(&nanobots, &zone);
-        // println!(
-        //     "zone : {:?}\nscore : {}\npotential_score : {}\nmax_score : {}\n",
-        //     zone, score, potential_score, max_score
-        // );
-
-        if potential_score < max_score {
-            continue;
-        }
-
-        if zone.is_a_point() || potential_score == score {
-            let distance = manhattan(&origin, &zone.bottom_left);
-            // find nearest point covering everything
-            if (score > max_score) || (score == max_score && distance <= current_min) {
-                current_min = distance;
-                zonee = zone;
-                max_score = score;
-            }
-        } else {
-            max_score = score.max(max_score);
-            zone.split()
-                .into_iter()
-                .for_each(|child| queue.push_back(child));
-        }
-        // stdin().read_line(&mut t).expect("no");
-    }
-    println!("{}", i);
-    println!("{}", max_score);
-    println!("{:?}", zonee);
-    current_min
-
-#[derive(Debug, Clone, Copy)]
-pub struct Zone {
-    bottom_left: Point,
-    x_length: i64,
-    y_length: i64,
-    z_length: i64,
-}
-
-impl NanoBot {
-    pub fn touches_zone(&self, zone: &Zone) -> bool {
-        // a nanobot touches a rectangular zone only and only if it covers
-        // one of its vertices, hence the 8 corners check, or is inside the zone
-
-        if zone.contains_point(&self.pos) {
-            return true;
-        }
-
-        for x_add in 0..2 {
-            for y_add in 0..2 {
-                for z_add in 0..2 {
-                    let x = zone.bottom_left.0 + x_add * zone.x_length;
-                    let y = zone.bottom_left.1 + y_add * zone.y_length;
-                    let z = zone.bottom_left.2 + z_add * zone.z_length;
-                    let corner = Point(x, y, z);
-
-                    if manhattan(&corner, &self.pos) <= self.radius {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        false
-    }
-
-    pub fn contains_zone(&self, zone: &Zone) -> bool {
-        // a nanobot touches a rectangular zone only and only if it covers
-        // one of its vertices, hence the 8 corners check
-
-        for x_add in 0..2 {
-            for y_add in 0..2 {
-                for z_add in 0..2 {
-                    let x = zone.bottom_left.0 + x_add * zone.x_length;
-                    let y = zone.bottom_left.1 + y_add * zone.y_length;
-                    let z = zone.bottom_left.2 + z_add * zone.z_length;
-                    let corner = Point(x, y, z);
-
-                    if manhattan(&corner, &self.pos) > self.radius {
-                        return false;
-                    }
-                }
-            }
-        }
-
-        true
-    }
-}
-
-impl Zone {
-    pub fn split(&self) -> Vec<Zone> {
-        let (x_length_0, x_length_1) = if self.x_length == 1 {
-            (0, 0)
-        } else {
-            (self.x_length / 2, self.x_length - (self.x_length / 2))
-        };
-
-        let (y_length_0, y_length_1) = if self.y_length == 1 {
-            (0, 0)
-        } else {
-            (self.y_length / 2, self.y_length - (self.y_length / 2))
-        };
-        let (z_length_0, z_length_1) = if self.z_length == 1 {
-            (0, 0)
-        } else {
-            (self.z_length / 2, self.z_length - (self.z_length / 2))
-        };
-
-        let mut children = vec![];
-
-        for x_add in 0..2 {
-            let mut x = self.bottom_left.0 + x_add * x_length_0;
-            let x_length = if x_add == 0 { x_length_0 } else { x_length_1 };
-            if self.x_length == 1 && x_add == 1 {
-                x += 1;
-            }
-
-            for y_add in 0..2 {
-                let mut y = self.bottom_left.1 + y_add * y_length_0;
-                let y_length = if y_add == 0 { y_length_0 } else { y_length_1 };
-                if self.y_length == 1 && y_add == 1 {
-                    y += 1;
-                }
-
-                for z_add in 0..2 {
-                    let mut z = self.bottom_left.2 + z_add * z_length_0;
-                    let z_length = if z_add == 0 { z_length_0 } else { z_length_1 };
-                    if self.z_length == 1 && z_add == 1 {
-                        z += 1;
-                    }
-
-                    children.push(Zone {
-                        bottom_left: Point(x, y, z),
-                        x_length,
-                        y_length,
-                        z_length,
-                    })
-                }
-            }
-        }
-
-        children
-    }
-
-    pub fn is_a_point(&self) -> bool {
-        self.x_length == 0 && self.y_length == 0 && self.z_length == 0
-    }
-
-    pub fn contains_point(&self, point: &Point) -> bool {
-        (point.0 >= self.bottom_left.0 && point.0 <= self.bottom_left.0 + self.x_length)
-            && (point.1 >= self.bottom_left.1 && point.1 <= self.bottom_left.1 + self.y_length)
-            && (point.0 >= self.bottom_left.2 && point.2 <= self.bottom_left.2 + self.z_length)
-    }
-}
-
-fn find_biggest_zone(nanobots: &InputType) -> Zone {
-    // looking only in the nanobots without the ranges,
-    // because the point we are looking for has to be inside a square of beacons
-    // not efficient but it's only init
-    let min_x = nanobots.iter().max_by_key(|n| -n.pos.0).unwrap().pos.0;
-    let max_x = nanobots.iter().max_by_key(|n| n.pos.0).unwrap().pos.0;
-    let min_y = nanobots.iter().max_by_key(|n| -n.pos.1).unwrap().pos.1;
-    let max_y = nanobots.iter().max_by_key(|n| n.pos.1).unwrap().pos.1;
-    let min_z = nanobots.iter().max_by_key(|n| -n.pos.2).unwrap().pos.2;
-    let max_z = nanobots.iter().max_by_key(|n| n.pos.2).unwrap().pos.2;
-
-    Zone {
-        bottom_left: Point(min_x, min_y, min_z),
-        x_length: max_x - min_x,
-        y_length: max_y - min_y,
-        z_length: max_z - min_z,
-    }
-}
-
-fn nanobots_touching_zone(nanobots: &InputType, zone: &Zone) -> usize {
-    nanobots.iter().filter(|n| n.touches_zone(zone)).count()
-}
-
-fn nanobots_containing_zone(nanobots: &InputType, zone: &Zone) -> usize {
-    nanobots.iter().filter(|n| n.contains_zone(zone)).count()
-}
-
-
-*/
