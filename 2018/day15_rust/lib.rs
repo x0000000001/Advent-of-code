@@ -66,7 +66,7 @@ fn choose_target(map: &Map, ennemies: &Vec<Point>) -> Point {
         .collect::<Vec<(usize, usize)>>();
     candidates.sort_by_key(|&(i, _)| ennemies[i]);
 
-    ennemies[candidates[0].0]
+    ennemies[candidates.last().unwrap().0]
 }
 
 impl PartialOrd for Point {
@@ -198,7 +198,6 @@ fn neighbors(map: &Map, &Point { x, y }: &Point) -> Vec<Point> {
     result
 }
 
-// returns true if kills an ennemy
 fn unit_play(
     map: &mut Map,
     mut unit_pos: Point,
@@ -307,8 +306,9 @@ fn print_map(map: &Map) {
     }
 }
 
-/// Returns (have elfs won, map score)
-fn play(mut map: Map, elfs_attack_power: usize) -> (bool, usize) {
+/// Returns `Some(outcome)` if `can_elfs_accept_losses = true`,
+/// `Some(outcome)` otherwise if elves win, `None` otherwise.
+fn play(mut map: Map, elfs_attack_power: usize, can_elfs_accept_losses: bool) -> Option<usize> {
     let mut globlins_alive = 0;
     let mut elfs_alives = 0;
 
@@ -321,10 +321,17 @@ fn play(mut map: Map, elfs_attack_power: usize) -> (bool, usize) {
             }
         }
     }
+
+    let elfs_alives_at_start = elfs_alives;
+
     let mut finished = false;
     let mut full_rounds_completed = 0;
 
     while !finished {
+        if !can_elfs_accept_losses && elfs_alives != elfs_alives_at_start {
+            return None;
+        }
+
         // print_map(&map);
         let mut moved_cases = HashSet::new();
 
@@ -367,26 +374,31 @@ fn play(mut map: Map, elfs_attack_power: usize) -> (bool, usize) {
     //     sum_of_hipoints, full_rounds_completed
     // );
 
-    (globlins_alive == 0, sum_of_hipoints * full_rounds_completed)
+    Some(sum_of_hipoints * full_rounds_completed)
 }
 
 pub fn result_1(map: Map) -> i64 {
-    play(map, 3).1 as i64
+    play(map, 3, true).unwrap() as i64
 }
 
-// 27089 too low
+/// Dichotomoy.
 pub fn result_2(map: Map) -> i64 {
-    let mut i = 4;
+    let mut low = 3;
+    let mut high = 10000;
+    let mut high_score = 0;
 
-    loop {
-        let (have_elfs_won, score) = play(map.clone(), i);
+    while high != low + 1 {
+        let mid = (low + high) / 2;
 
-        if have_elfs_won {
-            return score as i64;
+        if let Some(score) = play(map.clone(), mid, false) {
+            high_score = score;
+            high = mid;
+        } else {
+            low = mid;
         }
-
-        i += 1;
     }
+
+    high_score as i64
 }
 
 pub fn read_input(path: &str) -> Map {
