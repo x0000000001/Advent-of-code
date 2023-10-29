@@ -27,6 +27,7 @@ fn main() {
     ex_function(result_1, "test 1.1", "test_input1.txt", Some(86));
     ex_function(result_1, "test 1.2", "test_input2.txt", Some(132));
     ex_function(result_1, "test 1.3", "test_input3.txt", Some(136));
-    // ex_function(result_1, "result 1", INPUT_PATH, None);
-    // ex_function(result_2, "result 2", INPUT_PATH, None);
+    ex_function(result_1, "test 1.4", "test_input4.txt", Some(81));
+    ex_function(result_1, "result 1", INPUT_PATH, None);
+    ex_function(result_2, "result 2", INPUT_PATH, None);
 }
