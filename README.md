@@ -12,8 +12,8 @@ When coding in python, I like to do [golfing](https://fr.wikipedia.org/wiki/Code
 *2015* **Rust** *finsihed*\
 *2016* **Rust** *finsihed*\
 *2017* **Rust** *finsihed*\
-*2018* **JavaScript/TypeScript** and **Rust** \
-*2019* **JavaScript/TypeScript** and **Rust** \
+*2018* **JavaScript/TypeScript** and **Rust** *finsihed*\
+*2019* **JavaScript/TypeScript** and **Rust** *finished*\
 *2020* **JavaScript/TypeScript** and **Go** and **Rust** *finsihed*\
 *2021* **Rust** *finsihed*\
 *2022* 8 days in **Go**, 8 in **TypeScript**, and 9 in **Rust** *finsihed*
@@ -35,3 +35,4 @@ When coding in python, I like to do [golfing](https://fr.wikipedia.org/wiki/Code
 * 2018::14 : 300s for part 2, and I can't find a way to optimize it... [Apparently lazy linked lists seem to do the job](https://www.reddit.com/r/adventofcode/comments/a61ojp/comment/ebr5c0q/?utm_source=share&utm_medium=web2x&context=3), but I didn't spend enough time to implement it in rust.
 
 * 2019::22 : Deck shuffling. This is mathematically hard and very interesting.
+
