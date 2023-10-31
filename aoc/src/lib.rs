@@ -3,7 +3,7 @@ pub mod helpers;
 pub mod year_2015;
 pub mod year_2016;
 
-pub use helpers::{AocDay, AocImplementation, Solution};
+pub use helpers::{AocDay, AocImplementation, OutputType, Solution};
 
 use phf::phf_map;
 
