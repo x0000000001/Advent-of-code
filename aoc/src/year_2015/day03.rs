@@ -1,21 +1,10 @@
-use std::fs;
+use crate::Solution;
 
-const FILE: &str = "input.txt";
+type InputType = Vec<char>;
 
-fn read_input() -> Vec<char> {
-    let contents = fs::read_to_string(FILE).expect("Something went wrong reading the file");
+pub fn part1(s: String) -> Solution {
+    let input = parse(s);
 
-    let input: Vec<String> = contents
-        .lines()
-        .into_iter()
-        .map(|line| line.trim().to_owned())
-        .collect();
-
-    return input[0].chars().collect();
-}
-
-pub fn result_1() -> i64 {
-    let input = read_input();
     let mut pos: Vec<(i64, i64)> = vec![];
     pos.push((0, 0));
     let mut current_pos = (0, 0);
@@ -35,11 +24,12 @@ pub fn result_1() -> i64 {
         }
     }
 
-    count
+    Solution::from(count)
 }
 
-pub fn result_2() -> i64 {
-    let input = read_input();
+pub fn part2(s: String) -> Solution {
+    let input = parse(s);
+
     let mut pos: Vec<(i64, i64)> = vec![];
     pos.push((0, 0));
     let mut santa_pos0 = (0, 0);
@@ -68,5 +58,15 @@ pub fn result_2() -> i64 {
         }
     }
 
-    count
+    Solution::from(count)
+}
+
+fn parse(s: String) -> InputType {
+    let input: Vec<String> = s
+        .lines()
+        .into_iter()
+        .map(|line| line.trim().to_owned())
+        .collect();
+
+    input[0].chars().collect()
 }

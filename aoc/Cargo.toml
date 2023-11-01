@@ -12,3 +12,4 @@ keywords = ["advent-of-code", "rust", "algorithmic"]
 [dependencies]
 num-traits = "0.2.17"
 phf = { version = "0.11.2", features = ["macros"] }
+md5 = "0.7.0"
