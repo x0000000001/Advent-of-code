@@ -133,9 +133,20 @@ impl AocDay {
 
                     global_fg(color);
 
-                    print!("{}{}", s, " ".repeat(20 - s.len()));
-
-                    // FIXME Why is alignment bugged ?
+                    // This is a dirty fix for microseconds
+                    // being printed on less characters than
+                    // they appear to to String.
+                    print!(
+                        "{}{}",
+                        s,
+                        " ".repeat(
+                            (20 + if duration < Duration::from_millis(1) {
+                                1
+                            } else {
+                                0
+                            }) - s.len()
+                        )
+                    );
 
                     global_fg(colorize::Color::Default);
                 };
