@@ -1,51 +1,64 @@
-use std::fs;
 use std::collections::HashMap;
+use std::fs;
 
 const FILE: &str = "input.txt";
 
-fn read_input() -> Vec<Vec<i32>> 
-{
-    let contents = fs::read_to_string(FILE)
-    .expect("Something went wrong reading the file");
+fn read_input() -> Vec<Vec<i32>> {
+    let contents = fs::read_to_string(FILE).expect("Something went wrong reading the file");
 
-    let input:Vec<_> = contents.lines().map(|line| line.trim()).collect();
+    let input: Vec<_> = contents.lines().map(|line| line.trim()).collect();
 
-
-    input.into_iter().map(|l|
-        l.chars().map(|c| c.to_digit(10).unwrap() as i32).collect::<Vec<i32>>()
-    ).collect::<Vec<Vec<i32>>>()
+    input
+        .into_iter()
+        .map(|l| {
+            l.chars()
+                .map(|c| c.to_digit(10).unwrap() as i32)
+                .collect::<Vec<i32>>()
+        })
+        .collect::<Vec<Vec<i32>>>()
 }
 
-pub fn result_1() -> i32
-{  
+pub fn result_1() -> i32 {
     let risks = read_input();
 
     let width = risks.len() as i32;
     let height = risks[0].len() as i32;
 
-    let mut explored_cases: HashMap<(i32,i32), i32> = HashMap::new();
-    let mut to_explore_cases: HashMap<(i32,i32),i32>= HashMap::new();
+    let mut explored_cases: HashMap<(i32, i32), i32> = HashMap::new();
+    let mut to_explore_cases: HashMap<(i32, i32), i32> = HashMap::new();
 
-    to_explore_cases.insert((0,0), 0);
+    to_explore_cases.insert((0, 0), 0);
 
-    while !to_explore_cases.is_empty()  {
-        let (&case, &cost) = to_explore_cases.iter().min_by(|a,b| a.1.cmp(&b.1)).unwrap();
+    while !to_explore_cases.is_empty() {
+        let (&case, &cost) = to_explore_cases
+            .iter()
+            .min_by(|a, b| a.1.cmp(&b.1))
+            .unwrap();
 
-        if case == (width-1, height-1){
+        if case == (width - 1, height - 1) {
             return cost as i32;
         }
 
         to_explore_cases.remove(&case);
-    
+
         explored_cases.insert(case, cost);
 
-        for (x,y) in [(case.0-1, case.1), (case.0+1, case.1), (case.0, case.1-1), (case.0, case.1+1)] {
-            if x < 0 || y < 0 || x >= width || y >= height { continue;}
-            if explored_cases.contains_key(&(x,y)) { continue;}
-            
-            let access = to_explore_cases.entry((x,y)).or_insert(i32::MAX);
+        for (x, y) in [
+            (case.0 - 1, case.1),
+            (case.0 + 1, case.1),
+            (case.0, case.1 - 1),
+            (case.0, case.1 + 1),
+        ] {
+            if x < 0 || y < 0 || x >= width || y >= height {
+                continue;
+            }
+            if explored_cases.contains_key(&(x, y)) {
+                continue;
+            }
+
+            let access = to_explore_cases.entry((x, y)).or_insert(i32::MAX);
             let new_possible_cost = cost + risks[x as usize][y as usize];
-            if new_possible_cost < *access{
+            if new_possible_cost < *access {
                 *access = new_possible_cost;
             }
         }
@@ -54,10 +67,9 @@ pub fn result_1() -> i32
     0
 }
 
-fn risk_calculus(x: &i32, y: &i32, width: &i32, height: &i32,risks: &Vec<Vec<i32>>) -> i32
-{
-    let addition: i32 = x/width + y/height;
-    let mut candidate = risks[(x%width) as usize][(y%height) as usize] + addition;
+fn risk_calculus(x: &i32, y: &i32, width: &i32, height: &i32, risks: &Vec<Vec<i32>>) -> i32 {
+    let addition: i32 = x / width + y / height;
+    let mut candidate = risks[(x % width) as usize][(y % height) as usize] + addition;
     while candidate > 9 {
         candidate -= 9;
     }
@@ -65,37 +77,47 @@ fn risk_calculus(x: &i32, y: &i32, width: &i32, height: &i32,risks: &Vec<Vec<i32
     candidate
 }
 
-
-pub fn result_2() -> i32
-{   
+pub fn result_2() -> i32 {
     let risks = read_input();
 
     let width = risks.len() as i32;
     let height = risks[0].len() as i32;
 
-    let mut explored_cases: HashMap<(i32,i32), i32> = HashMap::new();
-    let mut to_explore_cases: HashMap<(i32,i32),i32>= HashMap::new();
+    let mut explored_cases: HashMap<(i32, i32), i32> = HashMap::new();
+    let mut to_explore_cases: HashMap<(i32, i32), i32> = HashMap::new();
 
-    to_explore_cases.insert((0,0), 0);
+    to_explore_cases.insert((0, 0), 0);
 
-    while !to_explore_cases.is_empty()  {
-        let (&case, &cost) = to_explore_cases.iter().min_by(|a,b| a.1.cmp(&b.1)).unwrap();
+    while !to_explore_cases.is_empty() {
+        let (&case, &cost) = to_explore_cases
+            .iter()
+            .min_by(|a, b| a.1.cmp(&b.1))
+            .unwrap();
 
-        if case == (5*width-1, 5*height-1){
+        if case == (5 * width - 1, 5 * height - 1) {
             return cost as i32;
         }
 
         to_explore_cases.remove(&case);
-    
+
         explored_cases.insert(case, cost);
 
-        for (x,y) in [(case.0-1, case.1), (case.0+1, case.1), (case.0, case.1-1), (case.0, case.1+1)] {
-            if x < 0 || y < 0 || x >= (5*width) || y >= (5*height) { continue;}
-            if explored_cases.contains_key(&(x,y)) { continue;}
-            
-            let access = to_explore_cases.entry((x,y)).or_insert(i32::MAX);
-            let new_possible_cost = cost + risk_calculus(&x,&y, &width, &height, &risks);
-            if new_possible_cost < *access{
+        for (x, y) in [
+            (case.0 - 1, case.1),
+            (case.0 + 1, case.1),
+            (case.0, case.1 - 1),
+            (case.0, case.1 + 1),
+        ] {
+            if x < 0 || y < 0 || x >= (5 * width) || y >= (5 * height) {
+                continue;
+            }
+            if explored_cases.contains_key(&(x, y)) {
+                continue;
+            }
+
+            let access = to_explore_cases.entry((x, y)).or_insert(i32::MAX);
+            let new_possible_cost = cost + risk_calculus(&x, &y, &width, &height, &risks);
+            if new_possible_cost < *access {
                 *access = new_possible_cost;
             }
         }
