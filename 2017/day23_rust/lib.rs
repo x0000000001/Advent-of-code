@@ -181,7 +181,6 @@ pub fn result_2(prg: InputType) -> i64 {
     h
 }
 
-// 904 too low
 fn line_to_instr(l: &str) -> Instr {
     let words = l.split_whitespace().collect::<Vec<&str>>();
     let arg0 = Var::from(words[1]);
