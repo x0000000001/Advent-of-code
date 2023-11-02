@@ -126,7 +126,6 @@ fn blueprint_score(
     max
 }
 
-// 944 too low
 pub fn result_1(input: InputType) -> i64 {
     input
         .into_iter()
