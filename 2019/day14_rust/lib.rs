@@ -47,7 +47,7 @@ pub fn result_1(input: InputType) -> i64 {
     ore_for_n_fuel(&input, 1) as i64
 }
 
-// dicotomy
+// dichotomy
 pub fn result_2(input: InputType) -> i64 {
     let available: usize = 1000000000000;
     let mut a: usize = 1000000000000;

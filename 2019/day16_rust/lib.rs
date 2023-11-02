@@ -54,7 +54,6 @@ pub fn result_1(mut input: InputType) -> i64 {
 /// Sources : (very elegant soolutions, worth to check) \
 /// https://old.reddit.com/r/adventofcode/comments/ebb8w6/2019_day_16_part_three_a_fanfiction_by_askalski/ \
 /// https://gist.github.com/alexanderhaupt/1ac31ecbd316aca32c469f42d8646c98
-
 pub fn result_2(input: InputType) -> i64 {
     println!("2019/DAY16 : THERE IS A SMARTER WAY TO DO THIS, READ COMMENTS FOR DETAILS");
 
