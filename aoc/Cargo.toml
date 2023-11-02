@@ -14,3 +14,5 @@ num-traits = "0.2.17"
 phf = { version = "0.11.2", features = ["macros"] }
 md5 = "0.7.0"
 colorize = "0.1.0"
+itertools = {}
+num-integer = "0.1.45"                              # for 2019_12
