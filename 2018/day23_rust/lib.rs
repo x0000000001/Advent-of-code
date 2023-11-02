@@ -257,7 +257,6 @@ fn optimal_position(nanobots: &InputType) -> usize {
     optimal_distance
 }
 
-// 416618662 too high
 pub fn result_2(nanobots: InputType) -> i64 {
     optimal_position(&nanobots) as i64
 }
