@@ -31,7 +31,10 @@ fn main() {
 
     match args[1].as_str() {
         "all" => {
-            for day in DAYS.values() {
+            let mut days: Vec<&aoc::AocDay> = DAYS.values().collect();
+            days.sort_by_key(|d| d.name);
+
+            for day in days {
                 day.solve(aoc::OutputType::Full);
             }
         }
@@ -60,11 +63,13 @@ fn main() {
                     return;
                 }
 
-                let days_of_year: Vec<&aoc::AocDay> = DAYS
+                let mut days_of_year: Vec<&aoc::AocDay> = DAYS
                     .keys()
                     .filter(|k| k[0..4] == args[2])
                     .map(|k| DAYS.get(k).unwrap())
                     .collect();
+
+                days_of_year.sort_by_key(|d| d.name);
 
                 if days_of_year.len() == 0 {
                     println!("There are no days here for year {}. Sorry !", year);

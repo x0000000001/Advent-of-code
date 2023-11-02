@@ -1,6 +1,8 @@
 use std::fmt::Display;
 use std::time::Duration;
 
+use colorize::global_fg;
+
 use super::ex_function;
 use super::path::get_path;
 use super::solution::Solution;
@@ -22,12 +24,12 @@ impl Display for AocImplementation {
                 write!(f, "")
             }
             AocImplementation::ImplementedInOtherLanguage(Some(name)) => {
-                write!(f, "Implemented in {name}.\n")
+                write!(f, "Implemented in {name}.")
             }
             AocImplementation::ImplementedInOtherLanguage(None) => {
-                write!(f, "Implemented in another unknown language.\n")
+                write!(f, "Implemented in another unknown language.")
             }
-            AocImplementation::NotImplementedYet => write!(f, "Not implemented yet.\n"),
+            AocImplementation::NotImplementedYet => write!(f, "Not implemented yet."),
         }
     }
 }
@@ -49,7 +51,7 @@ pub enum OutputType {
 fn read_file(path: &str) -> String {
     match std::fs::read_to_string(path) {
         Ok(s) => s,
-        Err(err) => panic!("{}", err),
+        Err(err) => panic!("Error while trying to open {} : {}", path, err),
     }
 }
 
@@ -84,14 +86,12 @@ impl AocDay {
                 let input_string = read_file(&path);
 
                 let print_line = |(sol, duration): (Solution, Duration), name: &str| match sol {
-                    sol @ Solution::Num(_)
-                    | sol @ Solution::String(_)
-                    | sol @ Solution::NotFound => println!(
+                    Solution::Num(_) | Solution::String(_) | Solution::NotFound => println!(
                         "{name} -> {sol} {}, {:.2?}",
                         " ".repeat(20 - sol.to_string().len()),
                         duration
                     ),
-                    Solution::NotImplemented => println!("{}", sol),
+                    Solution::NotImplemented | Solution::Day25Part2 => println!("{}", sol),
                 };
 
                 print_line(ex_function(part1, input_string.clone()), "Part 1");
@@ -112,14 +112,32 @@ impl AocDay {
                 let print_time = |(sol, duration): (Solution, Duration)| {
                     let s = match sol {
                         Solution::Num(_) | Solution::String(_) | Solution::NotFound => {
-                            format!("{:.2?}", duration)
+                            format!("{:.0?}", duration)
                         }
-                        Solution::NotImplemented => {
-                            format!("{}", self.implementation)
+                        Solution::NotImplemented | Solution::Day25Part2 => {
+                            format!("{}", sol)
                         }
                     };
 
-                    print!("{}{}", s, " ".repeat(20 - s.len()))
+                    let color = if duration < Duration::from_millis(10) {
+                        colorize::Color::BrightGreen
+                    } else if duration < Duration::from_millis(100) {
+                        colorize::Color::Green
+                    } else if duration < Duration::from_millis(500) {
+                        colorize::Color::Yellow
+                    } else if duration < Duration::from_millis(1000) {
+                        colorize::Color::Magenta
+                    } else {
+                        colorize::Color::Red
+                    };
+
+                    global_fg(color);
+
+                    print!("{}{}", s, " ".repeat(20 - s.len()));
+
+                    // FIXME Why is alignment bugged ?
+
+                    global_fg(colorize::Color::Default);
                 };
 
                 print_time(ex_function(part1, input_str.clone()));

@@ -14,11 +14,11 @@ fn print_checksum(mut input: InputType, disk_space: usize) {
 
     input.truncate(disk_space);
 
-    while input.len()%2 == 0 {
+    while input.len() % 2 == 0 {
         let mut temp = vec![];
         let mut i = 0;
-        while i+1 < input.len() {
-            if input[i] == input[i+1] {
+        while i + 1 < input.len() {
+            if input[i] == input[i + 1] {
                 temp.push(true);
             } else {
                 temp.push(false);
@@ -31,20 +31,17 @@ fn print_checksum(mut input: InputType, disk_space: usize) {
     }
 
     for b in input {
-        print!("{}", if b {1} else {0});
-    } println!();
+        print!("{}", if b { 1 } else { 0 });
+    }
+    println!();
 }
 
-/// Read input.
-pub fn result_1(input: InputType) -> i64
-{
+pub fn result_1(input: InputType) -> i64 {
     print_checksum(input, 272);
     0
 }
 
-
-pub fn result_2(input: InputType) -> i64
-{   
+pub fn result_2(input: InputType) -> i64 {
     print_checksum(input, 35651584);
     0
 }

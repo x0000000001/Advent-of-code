@@ -1,10 +1,8 @@
 pub type InputType = Vec<String>;
 
-pub fn result_1(input: InputType) -> i64
-{
+pub fn result_1(input: InputType) -> i64 {
     let mut count: i64 = 0;
     let mut begin_index = None;
-
 
     for l in input {
         let chars = l.chars().collect::<Vec<char>>();
@@ -47,17 +45,17 @@ pub fn contains_red_as_arg(s: &str) -> bool {
                 if arrays_count == 0 && brackets_count == 1 {
                     is_right_item = false;
                 }
-            },
+            }
             ':' => {
                 if arrays_count == 0 && brackets_count == 1 {
                     is_right_item = true;
                 }
-            },
-            _ => ()
+            }
+            _ => (),
         }
 
         if is_right_item && arrays_count == 0 && brackets_count == 1 {
-            if chars[i] == 'r' && chars[i+1] == 'e' && chars[i+2] == 'd' {
+            if chars[i] == 'r' && chars[i + 1] == 'e' && chars[i + 2] == 'd' {
                 return true;
             }
         }
@@ -66,18 +64,15 @@ pub fn contains_red_as_arg(s: &str) -> bool {
     false
 }
 
-pub fn result_2(input: InputType) -> i64
-{  
+pub fn result_2(input: InputType) -> i64 {
     let mut count: i64 = 0;
     let mut begin_index = None;
     let mut begin_brackets_indexs: Vec<usize> = vec![];
     let mut temp_counts: Vec<i64> = vec![];
 
-
     for l in input {
         let chars = l.chars().collect::<Vec<char>>();
         for i in 0..chars.len() {
-
             if chars[i].is_digit(10) || chars[i] == '-' {
                 if begin_index.is_none() {
                     begin_index = Some(i);
@@ -106,8 +101,7 @@ pub fn result_2(input: InputType) -> i64
                         count += tc;
                     }
                 }
-
-            } 
+            }
         }
 
         if let Some(b) = begin_index {
