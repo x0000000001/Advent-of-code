@@ -1,12 +1,15 @@
 use core::panic;
-use std::{fs, collections::{HashMap, VecDeque}};
+use std::{
+    collections::{HashMap, VecDeque},
+    fs,
+};
 
 pub type InputType = Vec<Instr>;
 
 #[derive(Debug)]
 pub enum Val {
     Var(char),
-    Num(i64)
+    Num(i64),
 }
 
 impl Val {
@@ -18,7 +21,7 @@ impl Val {
         }
     }
 
-    pub fn evaluate(&self, vars: &mut HashMap<char,i64>) -> i64 {
+    pub fn evaluate(&self, vars: &mut HashMap<char, i64>) -> i64 {
         match self {
             Val::Num(x) => *x,
             Val::Var(c) => {
@@ -28,7 +31,7 @@ impl Val {
         }
     }
 
-    pub fn set(&self, val: &Val, vars: &mut HashMap<char,i64>) {
+    pub fn set(&self, val: &Val, vars: &mut HashMap<char, i64>) {
         match self {
             Val::Num(_) => panic!(),
             Val::Var(c) => {
@@ -39,7 +42,7 @@ impl Val {
         }
     }
 
-    pub fn add(&self, val: &Val, vars: &mut HashMap<char,i64>) {
+    pub fn add(&self, val: &Val, vars: &mut HashMap<char, i64>) {
         match self {
             Val::Num(_) => panic!(),
             Val::Var(c) => {
@@ -50,7 +53,7 @@ impl Val {
         }
     }
 
-    pub fn mul(&self, val: &Val, vars: &mut HashMap<char,i64>) {
+    pub fn mul(&self, val: &Val, vars: &mut HashMap<char, i64>) {
         match self {
             Val::Num(_) => panic!(),
             Val::Var(c) => {
@@ -61,13 +64,13 @@ impl Val {
         }
     }
 
-    pub fn modulo(&self, val: &Val, vars: &mut HashMap<char,i64>) {
+    pub fn modulo(&self, val: &Val, vars: &mut HashMap<char, i64>) {
         match self {
             Val::Num(_) => panic!(),
             Val::Var(c) => {
                 let y = val.evaluate(vars);
                 let entry = vars.entry(*c).or_insert(0);
-                *entry = *entry - y * (*entry/y);
+                *entry = *entry - y * (*entry / y);
             }
         }
     }
@@ -76,12 +79,12 @@ impl Val {
 #[derive(Debug)]
 pub enum Instr {
     Snd(Val),
-    Set(Val,Val),
-    Add(Val,Val),
-    Mul(Val,Val),
-    Mod(Val,Val),
+    Set(Val, Val),
+    Add(Val, Val),
+    Mul(Val, Val),
+    Mod(Val, Val),
     Rcv(Val),
-    Jgz(Val,Val)
+    Jgz(Val, Val),
 }
 
 pub struct Machine {
@@ -89,18 +92,16 @@ pub struct Machine {
     is_waiting: bool,
     has_stopped: bool,
     queue: VecDeque<i64>,
-    regs: HashMap<char,i64>,
-    snd_count: u64
+    regs: HashMap<char, i64>,
+    snd_count: u64,
 }
 
-pub fn result_1(instrs: InputType) -> i64
-{
-    let mut vars: HashMap<char,i64> = HashMap::new();
+pub fn result_1(instrs: InputType) -> i64 {
+    let mut vars: HashMap<char, i64> = HashMap::new();
     let mut index: i64 = 0;
     let mut last_sound_rcv = 0;
 
-    while index >= 0 && index < instrs.len() as i64{
-
+    while index >= 0 && index < instrs.len() as i64 {
         let ins = &instrs[index as usize];
 
         match ins {
@@ -109,12 +110,16 @@ pub fn result_1(instrs: InputType) -> i64
             Instr::Add(x, y) => x.add(y, &mut vars),
             Instr::Mul(x, y) => x.mul(y, &mut vars),
             Instr::Mod(x, y) => x.modulo(y, &mut vars),
-            Instr::Rcv(x) => if x.evaluate(&mut vars) != 0 {
-                return last_sound_rcv;
-            },
-            Instr::Jgz(x, y) => if x.evaluate(&mut vars) != 0 {
-                index += y.evaluate(&mut vars);
-                continue;
+            Instr::Rcv(x) => {
+                if x.evaluate(&mut vars) != 0 {
+                    return last_sound_rcv;
+                }
+            }
+            Instr::Jgz(x, y) => {
+                if x.evaluate(&mut vars) != 0 {
+                    index += y.evaluate(&mut vars);
+                    continue;
+                }
             }
         }
 
@@ -125,7 +130,6 @@ pub fn result_1(instrs: InputType) -> i64
 }
 
 fn run_machine(machine: &mut Machine, instrs: &Vec<Instr>, send_queue: &mut VecDeque<i64>) {
-
     if machine.has_stopped {
         return;
     }
@@ -148,7 +152,6 @@ fn run_machine(machine: &mut Machine, instrs: &Vec<Instr>, send_queue: &mut VecD
             if machine.index < 0 || machine.index >= instrs.len() as i64 {
                 machine.has_stopped = true;
             }
-
         } else {
             panic!();
         }
@@ -158,27 +161,31 @@ fn run_machine(machine: &mut Machine, instrs: &Vec<Instr>, send_queue: &mut VecD
         let ins = &instrs[machine.index as usize];
 
         match ins {
-            Instr::Snd(x) =>  {
+            Instr::Snd(x) => {
                 send_queue.push_back(x.evaluate(&mut machine.regs));
                 machine.snd_count += 1;
-            },
+            }
             Instr::Set(x, y) => x.set(&y, &mut machine.regs),
             Instr::Add(x, y) => x.add(&y, &mut machine.regs),
             Instr::Mul(x, y) => x.mul(&y, &mut machine.regs),
             Instr::Mod(x, y) => x.modulo(&y, &mut machine.regs),
-            Instr::Rcv(x) => if let Some(val) = machine.queue.pop_front() {
-                if let Val::Var(c) = x {
-                    let entry = machine.regs.entry(*c).or_insert(0);
-                    *entry = val;
+            Instr::Rcv(x) => {
+                if let Some(val) = machine.queue.pop_front() {
+                    if let Val::Var(c) = x {
+                        let entry = machine.regs.entry(*c).or_insert(0);
+                        *entry = val;
+                    } else {
+                        panic!();
+                    }
                 } else {
-                    panic!();
+                    machine.is_waiting = true;
+                    break;
                 }
-            } else {
-                machine.is_waiting =  true;
-                break;
-            },
-            Instr::Jgz(x, y) => if x.evaluate(&mut machine.regs) > 0 {
-                machine.index += y.evaluate(&mut machine.regs) - 1; // -1 to compensate +1 after match
+            }
+            Instr::Jgz(x, y) => {
+                if x.evaluate(&mut machine.regs) > 0 {
+                    machine.index += y.evaluate(&mut machine.regs) - 1; // -1 to compensate +1 after match
+                }
             }
         }
 
@@ -190,45 +197,45 @@ fn run_machine(machine: &mut Machine, instrs: &Vec<Instr>, send_queue: &mut VecD
     }
 }
 
-// 127 too low
-pub fn result_2(instrs: InputType) -> i64
-{   
-    let mut machine0: Machine = Machine { 
-        index: 0, 
-        is_waiting: false, 
-        has_stopped: false, 
-        queue: VecDeque::new(), 
-        regs: HashMap::new(), 
-        snd_count: 0
+pub fn result_2(instrs: InputType) -> i64 {
+    let mut machine0: Machine = Machine {
+        index: 0,
+        is_waiting: false,
+        has_stopped: false,
+        queue: VecDeque::new(),
+        regs: HashMap::new(),
+        snd_count: 0,
     };
 
-    let mut machine1: Machine = Machine { 
-        index: 0, 
-        is_waiting: false, 
-        has_stopped: false, 
-        queue: VecDeque::new(), 
-        regs: HashMap::new(), 
-        snd_count: 0
+    let mut machine1: Machine = Machine {
+        index: 0,
+        is_waiting: false,
+        has_stopped: false,
+        queue: VecDeque::new(),
+        regs: HashMap::new(),
+        snd_count: 0,
     };
 
     machine1.regs.insert('p', 1);
 
-    while !((machine0.has_stopped || (machine0.is_waiting && machine0.queue.is_empty())) 
-        && (machine1.has_stopped || (machine1.is_waiting && machine1.queue.is_empty()))) {
+    while !((machine0.has_stopped || (machine0.is_waiting && machine0.queue.is_empty()))
+        && (machine1.has_stopped || (machine1.is_waiting && machine1.queue.is_empty())))
+    {
         run_machine(&mut machine0, &instrs, &mut machine1.queue);
         run_machine(&mut machine1, &instrs, &mut machine0.queue);
     }
 
-
     machine1.snd_count as i64
 }
 
-pub fn read_input(path: &str) -> InputType
-{
-    let contents= fs::read_to_string(path)
-    .expect("Something went wrong reading the file");
+pub fn read_input(path: &str) -> InputType {
+    let contents = fs::read_to_string(path).expect("Something went wrong reading the file");
 
-    let input:Vec<String> = contents.lines().into_iter().map(|line| line.trim().to_owned()).collect();
+    let input: Vec<String> = contents
+        .lines()
+        .into_iter()
+        .map(|line| line.trim().to_owned())
+        .collect();
 
     let mut res: InputType = vec![];
 
@@ -242,8 +249,8 @@ pub fn read_input(path: &str) -> InputType
             "mul" => Instr::Mul(Val::from_str(w[1]), Val::from_str(w[2])),
             "mod" => Instr::Mod(Val::from_str(w[1]), Val::from_str(w[2])),
             "rcv" => Instr::Rcv(Val::from_str(w[1])),
-            "jgz" => Instr::Jgz(Val::from_str(w[1]),Val::from_str(w[2])),
-            _ => panic!()
+            "jgz" => Instr::Jgz(Val::from_str(w[1]), Val::from_str(w[2])),
+            _ => panic!(),
         });
     }
 
@@ -254,8 +261,7 @@ pub fn read_input(path: &str) -> InputType
 const TEST_INPUT_PATH: &str = "test_input.txt";
 
 #[cfg(test)]
-mod test 
-{
+mod test {
     use super::*;
 
     // #[test]
@@ -264,10 +270,8 @@ mod test
     //     assert_eq!(result_1(read_input(TEST_INPUT_PATH)), 4);
     // }
 
-    
     #[test]
-    fn test2()
-    {
+    fn test2() {
         assert_eq!(result_2(read_input(TEST_INPUT_PATH)), 3);
     }
 }
