@@ -139,7 +139,7 @@ pub fn part1(s: String) -> Solution {
                     &(24, vec![0; 4], Vec::from([1, 0, 0, 0])),
                     &mut 0,
                 );
-                println!("id {} score {}", bp.id, score);
+                // println!("id {} score {}", bp.id, score);
                 bp.id * score
             })
             .sum::<usize>() as i64,
@@ -160,7 +160,7 @@ pub fn part2(s: String) -> Solution {
                     &(32, vec![0; 4], Vec::from([1, 0, 0, 0])),
                     &mut 0,
                 );
-                println!("id {} score {}", bp.id, score);
+                // println!("id {} score {}", bp.id, score);
                 score
             })
             .product::<usize>() as i64,
