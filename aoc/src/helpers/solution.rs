@@ -41,6 +41,8 @@ pub enum Solution {
     /// For a solution that is not yet implemented.\
     /// This is particulary usefull part1 is being implemented, but part2 isn't yet.
     NotImplemented,
+
+    Day25Part2,
 }
 
 impl From<&str> for Solution {
@@ -62,6 +64,7 @@ impl Display for Solution {
             Solution::String(s) => write!(f, "{s}"),
             Solution::NotFound => write!(f, "Not found"),
             Solution::NotImplemented => write!(f, "Not implemented yet"),
+            Solution::Day25Part2 => write!(f, "-"),
         }
     }
 }

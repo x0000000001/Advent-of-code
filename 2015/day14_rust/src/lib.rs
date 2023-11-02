@@ -3,15 +3,6 @@ use std::collections::HashMap;
 // name, speed, fly time, rest time
 pub type InputType = HashMap<String, Reindeer>;
 
-pub struct Reindeer {
-    speed: i64,
-    fly_time: i64,
-    rest_time: i64,
-    distance_travelled: i64,
-    fly_time_remaining: i64,
-    rest_time_remaining: i64,
-}
-
 impl Reindeer {
     pub fn create(speed: i64, fly_time: i64, rest_time: i64) -> Reindeer {
         Reindeer {
@@ -82,5 +73,5 @@ pub fn result_2(mut input: InputType) -> i64 {
         }
     }
 
-    scores.into_iter().map(|(n, s)| s).max().unwrap()
+    scores.into_iter().map(|(_, s)| s).max().unwrap()
 }
