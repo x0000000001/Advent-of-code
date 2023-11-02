@@ -194,7 +194,6 @@ impl Map {
     }
 }
 
-// 916 too low
 pub fn result_1(regex: InputType) -> i64 {
     let map = Map::from(&regex);
     // map.print();
