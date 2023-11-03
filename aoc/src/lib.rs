@@ -12,7 +12,7 @@ pub mod year_2021;
 pub mod year_2022;
 pub mod year_2023;
 
-pub use helpers::{AocDay, AocImplementation, OutputType, Solution};
+pub use helpers::{AocDay, AocImplementation, DayExecutionResult, OutputType, Solution};
 
 use phf::phf_map;
 

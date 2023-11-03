@@ -1,14 +1,13 @@
 use std::fmt::Display;
 use std::time::Duration;
 
-use colorize::global_fg;
-
 use super::ex_function;
-use super::path::get_path;
+use super::path::{get_input_paths, get_path};
 use super::solution::Solution;
 use super::SolFuncType;
 
 /// Wrapper to represent an aoc day solution.
+#[derive(Clone)]
 pub enum AocImplementation {
     /// Day implemented in Rust, containing part 1 and part 2 functions.
     Some(SolFuncType, SolFuncType),
@@ -48,18 +47,24 @@ pub enum OutputType {
     None,
 }
 
-fn read_file(path: &str) -> String {
-    match std::fs::read_to_string(path) {
-        Ok(s) => s,
-        Err(err) => panic!("Error while trying to open {} : {}", path, err),
-    }
+pub enum DayExecutionResult {
+    Success((Solution, Duration), (Solution, Duration)),
+    ImplementationError(AocImplementation),
+    FileReadingError(String),
 }
 
 impl AocDay {
     pub fn test_input(&self, part: usize, test_id: usize, expected_result: Solution) {
         if let AocImplementation::Some(part1, part2) = self.implementation {
             let path = get_path(self.name, Some(test_id));
-            let input_string = read_file(&path);
+
+            let input_string = match std::fs::read_to_string(path.clone()) {
+                Ok(s) => s,
+                Err(err) => {
+                    panic!("Problem reading file {path} for test input {test_id} : {err}");
+                }
+            };
+
             let (result, _) = ex_function(
                 match part {
                     1 => part1,
@@ -78,105 +83,40 @@ impl AocDay {
         }
     }
 
-    fn solve_full(&self) {
-        println!("--- {} ---", self.name);
-        match self.implementation {
-            AocImplementation::Some(part1, part2) => {
-                let path = get_path(self.name, None);
-                let input_string = read_file(&path);
-
-                let print_line = |(sol, duration): (Solution, Duration), name: &str| match sol {
-                    Solution::Num(_) | Solution::String(_) | Solution::NotFound => println!(
-                        "{name} -> {sol} {}, {:.2?}",
-                        " ".repeat(20 - sol.to_string().len()),
-                        duration
-                    ),
-                    Solution::NotImplemented | Solution::Day25Part2 => println!("{}", sol),
-                };
-
-                print_line(ex_function(part1, input_string.clone()), "Part 1");
-                print_line(ex_function(part2, input_string), "Part 2");
+    pub fn solve_path(&self, path: &str) -> DayExecutionResult {
+        let input_string = match std::fs::read_to_string(path) {
+            Ok(s) => s,
+            Err(err) => {
+                return DayExecutionResult::FileReadingError(format!("{err}"));
             }
-            _ => (),
-        }
-        println!("{}", self.implementation);
-    }
-
-    fn solve_time(&self) {
-        print!("{} || ", self.name);
-        match self.implementation {
-            AocImplementation::Some(part1, part2) => {
-                let path = get_path(self.name, None);
-                let input_str = read_file(&path);
-
-                let print_time = |(sol, duration): (Solution, Duration)| {
-                    let s = match sol {
-                        Solution::Num(_) | Solution::String(_) | Solution::NotFound => {
-                            format!("{:.0?}", duration)
-                        }
-                        Solution::NotImplemented | Solution::Day25Part2 => {
-                            format!("{}", sol)
-                        }
-                    };
-
-                    let color = if duration < Duration::from_millis(10) {
-                        colorize::Color::BrightGreen
-                    } else if duration < Duration::from_millis(100) {
-                        colorize::Color::Green
-                    } else if duration < Duration::from_millis(500) {
-                        colorize::Color::Yellow
-                    } else if duration < Duration::from_millis(1000) {
-                        colorize::Color::Magenta
-                    } else {
-                        colorize::Color::Red
-                    };
-
-                    global_fg(color);
-
-                    // This is a dirty fix for microseconds
-                    // being printed on less characters than
-                    // they appear to to String.
-                    print!(
-                        "{}{}",
-                        s,
-                        " ".repeat(
-                            (20 + if duration < Duration::from_millis(1) {
-                                1
-                            } else {
-                                0
-                            }) - s.len()
-                        )
-                    );
-
-                    global_fg(colorize::Color::Default);
-                };
-
-                print_time(ex_function(part1, input_str.clone()));
-                print!("|| ");
-                print_time(ex_function(part2, input_str));
-                println!();
-            }
-            _ => println!("{}", self.implementation),
         };
-    }
 
-    fn solve_quiet(&self) {
         match self.implementation {
-            AocImplementation::Some(part1, part2) => {
-                let path = get_path(self.name, None);
-                let input_str = read_file(&path);
-                ex_function(part1, input_str.clone());
-                ex_function(part2, input_str);
+            AocImplementation::Some(part1, part2) => DayExecutionResult::Success(
+                ex_function(part1, input_string.clone()),
+                ex_function(part2, input_string),
+            ),
+            AocImplementation::ImplementedInOtherLanguage(_)
+            | AocImplementation::NotImplementedYet => {
+                DayExecutionResult::ImplementationError(self.implementation.clone())
             }
-            _ => panic!("{}", self.implementation),
         }
     }
 
-    pub fn solve(&self, output_type: OutputType) {
-        match output_type {
-            OutputType::Full => self.solve_full(),
-            OutputType::OneLineTime => self.solve_time(),
-            OutputType::None => self.solve_quiet(),
-        }
+    pub fn solve(&self) -> DayExecutionResult {
+        let path = get_path(self.name, None);
+        self.solve_path(&path)
+    }
+
+    pub fn solve_test(&self, test_id: usize) -> DayExecutionResult {
+        let path = get_path(self.name, Some(test_id));
+        self.solve_path(&path)
+    }
+
+    pub fn solve_all_tests(&self) -> Vec<DayExecutionResult> {
+        get_input_paths(self.name)
+            .into_iter()
+            .map(|p| self.solve_path(&p))
+            .collect()
     }
 }

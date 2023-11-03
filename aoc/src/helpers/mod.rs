@@ -4,7 +4,7 @@ mod aoc_day;
 mod path;
 mod solution;
 
-pub use aoc_day::{AocDay, AocImplementation, OutputType};
+pub use aoc_day::{AocDay, AocImplementation, DayExecutionResult, OutputType};
 pub use solution::Solution;
 
 /// Type of an aoc solving function.
