@@ -2,7 +2,7 @@ use std::fs;
 
 const FILE: &str = "input.txt";
 
-// This algoruthm is not optimized at all :
+// This algorithm is not optimized at all :
 // Strings are being copied everywhere, it is dumb
 
 fn get_paths(current_point: String, links: Vec<(String, String)>) -> Vec<Vec<String>> {
