@@ -96,4 +96,7 @@ fn main() {
         }
         _ => println!("{HELP}"),
     }
+    // TODO command "test" to see a day's test_inputs results on input listed in data
+    // TODO move display from aoc_days to here
+    // TODO implement tests for days with test result from AOC website (very long)
 }
