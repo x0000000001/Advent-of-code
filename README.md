@@ -55,8 +55,6 @@ Some days deserve to be much more optimized than they currently are.
 
 ### 2019
 
-Day25 needs a fix to read output.
-
 ![benchmarks_2019.png](images/benchmarks_2019.png)
 
 ### 2020

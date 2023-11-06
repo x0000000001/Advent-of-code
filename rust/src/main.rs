@@ -47,11 +47,15 @@ fn print_line((sol, duration): (Solution, Duration), name: &str) {
 
 fn day(args: Vec<String>) {
     let print_line = |(sol, duration): (Solution, Duration), name: &str| match sol {
-        Solution::Num(_) | Solution::String(_) | Solution::NotFound => println!(
-            "{name} -> {sol} {}, {:.2?}",
-            " ".repeat(20 - sol.to_string().len()),
-            duration
-        ),
+        Solution::Num(_) | Solution::String(_) | Solution::NotFound => {
+            let sol_len = sol.to_string().len();
+
+            println!(
+                "{name} -> {sol} {}, {:.2?}",
+                " ".repeat(20.max(sol_len + 1) - sol_len),
+                duration
+            );
+        }
         Solution::NotImplemented | Solution::Day25Part2 => println!("{}", sol),
     };
 
