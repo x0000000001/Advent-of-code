@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, VecDeque},
-    io::{self, BufRead},
-};
+use std::collections::{HashMap, VecDeque};
 
 use crate::Solution;
 
@@ -228,47 +225,45 @@ pub fn part1(s: String) -> Solution {
     ));
     run_intcode(&mut prg);
 
-    // TODO fix this day : it is stuck in an infinite loop
-    loop {
-        // println!("{}", ascii_to_str(&prg.outputs));
-        prg.outputs.clear();
-        let mut line = String::new();
-        let stdin = io::stdin();
-        stdin.lock().read_line(&mut line).unwrap();
+    // println!("{}", ascii_to_str(&prg.outputs));
+    prg.outputs.clear();
 
-        if line == "bruteforce\n" {
-            // println!("bruteforcing !");
-            for mut i in 0..255 {
-                let mut s: String = names
-                    .iter()
-                    .map(|name| format!("drop {}\n", name))
-                    .collect();
+    // bruteforcing the combination of objects
+    for mut i in 0..255 {
+        let mut s: String = names
+            .iter()
+            .map(|name| format!("drop {}\n", name))
+            .collect();
 
-                for j in 0..8 {
-                    if i % 2 == 1 {
-                        s = format!("{s}take {}\n", names[j])
-                    }
-
-                    i /= 2;
-                }
-
-                s = format!("{s}west\n");
-                prg.inputs.append(&mut str_to_ascii(&s));
-                run_intcode(&mut prg);
-
-                let answer = ascii_to_str(&prg.outputs);
-                prg.outputs.clear();
-                // if answer.contains("password") {
-                return Solution::from(answer);
-                // return 0;
-                // }
+        for j in 0..8 {
+            if i % 2 == 1 {
+                s = format!("{s}take {}\n", names[j])
             }
-        } else {
-            prg.inputs.append(&mut str_to_ascii(&line));
+
+            i /= 2;
         }
 
+        s = format!("{s}west\n");
+        prg.inputs.append(&mut str_to_ascii(&s));
         run_intcode(&mut prg);
+
+        let answer = ascii_to_str(&prg.outputs);
+        prg.outputs.clear();
+
+        // println!("{}", answer);
+
+        if answer.contains("Santa notices") {
+            for w in answer.split_ascii_whitespace() {
+                if let Ok(password) = w.parse::<i64>() {
+                    return Solution::from(password);
+                }
+            }
+
+            return Solution::NotFound;
+        }
     }
+
+    return Solution::NotFound;
 }
 
 pub fn part2(_: String) -> Solution {
