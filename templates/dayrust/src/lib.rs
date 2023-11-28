@@ -1,6 +1,8 @@
-use crate::Solution;
+mod helpers;
 
-type InputType = Vec<char>;
+use helpers::Solution;
+
+type InputType = String;
 
 pub fn part1(s: String) -> Solution {
     let input = parse(s);
@@ -15,5 +17,5 @@ pub fn part2(s: String) -> Solution {
 }
 
 fn parse(s: String) -> InputType {
-    s.chars().collect()
+    s
 }
