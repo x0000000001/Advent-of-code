@@ -2,7 +2,7 @@ mod helpers;
 
 use std::usize;
 
-use helpers::Solution;
+pub use helpers::Solution;
 
 struct Game {
     id: usize,

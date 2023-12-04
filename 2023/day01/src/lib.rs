@@ -1,6 +1,6 @@
 mod helpers;
 
-use helpers::Solution;
+pub use helpers::Solution;
 
 const NUMS: [&str; 9] = [
     "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
