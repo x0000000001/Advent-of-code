@@ -1,6 +1,6 @@
 mod helpers;
 
-use helpers::Solution;
+pub use helpers::Solution;
 
 type InputType = String;
 
