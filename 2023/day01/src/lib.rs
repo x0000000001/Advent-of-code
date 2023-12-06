@@ -13,9 +13,9 @@ fn get_numbers(l: Vec<char>) -> Vec<Digit> {
         if let Some(x) = c.to_digit(10) {
             l_nums.push(Digit::Num(x));
         } else {
-            for i in 0..9 {
-                let len = NUMS[i].len();
-                if k >= len - 1 && l[k + 1 - len..k + 1].iter().collect::<String>() == NUMS[i] {
+            for (i, &num) in NUMS.iter().enumerate() {
+                let len = num.len();
+                if k >= len - 1 && l[k + 1 - len..k + 1].iter().collect::<String>() == num {
                     l_nums.push(Digit::Str((i + 1) as u32));
                 }
             }

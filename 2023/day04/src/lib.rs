@@ -45,7 +45,6 @@ fn parse(s: String) -> InputType {
         |s: &str| -> Vec<usize> { s.split_whitespace().map(|w| w.parse().unwrap()).collect() };
 
     s.lines()
-        .into_iter()
         .map(|l| {
             let w0 = l.split(':').collect::<Vec<&str>>();
             let w01 = w0[1].split('|').collect::<Vec<&str>>();
