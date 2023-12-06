@@ -21,7 +21,7 @@ fn find_dest(from_val: usize, mapping: &Mapping) -> usize {
     from_val
 }
 
-fn find_location(mut seed: usize, mappings: &Vec<Mapping>) -> usize {
+fn find_location(mut seed: usize, mappings: &[Mapping]) -> usize {
     for mapping in mappings.iter() {
         seed = find_dest(seed, mapping);
     }
@@ -77,17 +77,13 @@ fn find_dest_ranges((start, end): (usize, usize), mapping: &Mapping) -> Vec<(usi
     dest_ranges
 }
 
-fn find_location_ranges(
-    seed_range: (usize, usize),
-    mappings: &Vec<Mapping>,
-) -> Vec<(usize, usize)> {
+fn find_location_ranges(seed_range: (usize, usize), mappings: &[Mapping]) -> Vec<(usize, usize)> {
     let mut ranges = vec![seed_range];
 
     for mapping in mappings.iter() {
         ranges = ranges
             .into_iter()
-            .map(|r| find_dest_ranges(r, mapping))
-            .flatten()
+            .flat_map(|r| find_dest_ranges(r, mapping))
             .collect();
     }
 
@@ -97,8 +93,8 @@ fn find_location_ranges(
 pub fn part2(s: String) -> Solution {
     let (seeds, mut mappings) = parse(s);
 
-    for i in 0..mappings.len() {
-        mappings[i].ranges.sort_by_key(|&(_, source, _)| source);
+    for mapping in mappings.iter_mut() {
+        mapping.ranges.sort_by_key(|&(_, source, _)| source);
     }
 
     let seeds_pairs = (0..(seeds.len() / 2))
@@ -108,8 +104,9 @@ pub fn part2(s: String) -> Solution {
     Solution::from(
         seeds_pairs
             .into_iter()
-            .map(|(start, length)| find_location_ranges((start, start + length - 1), &mappings))
-            .flatten()
+            .flat_map(|(start, length)| {
+                find_location_ranges((start, start + length - 1), &mappings)
+            })
             .map(|(start, _)| start)
             .min()
             .unwrap() as u64,

@@ -54,7 +54,7 @@ fn parse(s: String) -> InputType {
     let mut games = vec![];
 
     for line in s.lines() {
-        let w0 = line.split(":").collect::<Vec<&str>>();
+        let w0 = line.split(':').collect::<Vec<&str>>();
         let id = w0[0]
             .split_whitespace()
             .last()
@@ -64,7 +64,7 @@ fn parse(s: String) -> InputType {
 
         let mut rounds = vec![];
 
-        for s_round in w0[1].split(";") {
+        for s_round in w0[1].split(';') {
             let mut vals = (0, 0, 0);
 
             for s_val in s_round.split(',') {

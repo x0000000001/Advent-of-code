@@ -11,11 +11,11 @@ pub fn part1(s: String) -> Solution {
     let h = lines.len();
     let w = lines[0].len();
 
-    for i in 0..h {
+    for (i, line) in lines.iter().enumerate() {
         let mut current_number = vec![];
 
-        for j in 0..(w + 1) {
-            let c = if j == w { '_' } else { lines[i][j] };
+        (0..(w + 1)).for_each(|j| {
+            let c = if j == w { '_' } else { line[j] };
 
             if c.is_numeric() {
                 current_number.push(c);
@@ -37,7 +37,7 @@ pub fn part1(s: String) -> Solution {
 
                 current_number.clear();
             }
-        }
+        });
     }
 
     let mut sum = 0;
@@ -89,7 +89,7 @@ pub fn part2(s: String) -> Solution {
             let j_64 = j as i64;
 
             let mut neighbor_numbers = ((i_64 - 1)..(i_64 + 2))
-                .map(|i| {
+                .flat_map(|i| {
                     (j_64 - 1..j_64 + 2).filter_map(move |j| {
                         if i >= 0 && i < h as i64 && j >= 0 && j < w as i64 {
                             Some((i as usize, j as usize))
@@ -98,7 +98,6 @@ pub fn part2(s: String) -> Solution {
                         }
                     })
                 })
-                .flatten()
                 .filter_map(|(i, j)| {
                     if lines[i][j].is_numeric() {
                         let mut begin_index = j;
