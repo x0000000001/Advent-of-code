@@ -40,42 +40,7 @@ impl Shape {
 
 type Pos = (usize, usize);
 type Map = Vec<Vec<Shape>>;
-
 type InputType = (Map, Pos);
-
-fn propagate(mut pos: Pos, mut from_dir: Dir, map: &Map, distances: &mut HashMap<Pos, usize>) {
-    let mut i = 1;
-    let mut shape = map[pos.0][pos.1];
-
-    while shape != Shape::Start {
-        let entry = distances.entry(pos).or_insert(usize::MAX);
-        *entry = (*entry).min(i);
-
-        let next_dir = shape.get_other(&from_dir);
-
-        match next_dir {
-            Dir::North => {
-                pos.0 -= 1;
-                from_dir = Dir::South;
-            }
-            Dir::South => {
-                pos.0 += 1;
-                from_dir = Dir::North;
-            }
-            Dir::East => {
-                pos.1 += 1;
-                from_dir = Dir::West;
-            }
-            Dir::West => {
-                pos.1 -= 1;
-                from_dir = Dir::East;
-            }
-        }
-
-        shape = map[pos.0][pos.1];
-        i += 1;
-    }
-}
 
 fn get_start_pos(start: (usize, usize), map: &Map) -> (Vec<Pos>, Vec<Dir>, Shape) {
     let mut starts_pos = vec![];
@@ -137,6 +102,115 @@ fn get_start_pos(start: (usize, usize), map: &Map) -> (Vec<Pos>, Vec<Dir>, Shape
     (starts_pos, starts_from_dirs, start_type)
 }
 
+fn get_path(start: Pos, map: &Map) -> Vec<Pos> {
+    let (starts_pos, starts_from_dirs, _) = get_start_pos(start, map);
+    let mut pos = starts_pos[0];
+    let mut from_dir = starts_from_dirs[0];
+    let mut shape = map[pos.0][pos.1];
+    let mut path = vec![];
+
+    while shape != Shape::Start {
+        path.push(pos);
+
+        let next_dir = shape.get_other(&from_dir);
+
+        match next_dir {
+            Dir::North => {
+                pos.0 -= 1;
+                from_dir = Dir::South;
+            }
+            Dir::South => {
+                pos.0 += 1;
+                from_dir = Dir::North;
+            }
+            Dir::East => {
+                pos.1 += 1;
+                from_dir = Dir::West;
+            }
+            Dir::West => {
+                pos.1 -= 1;
+                from_dir = Dir::East;
+            }
+        }
+
+        shape = map[pos.0][pos.1];
+    }
+
+    path.push(pos);
+
+    path
+}
+
+pub fn part1(s: String) -> Solution {
+    let (map, start) = parse(s);
+    let path = get_path(start, &map);
+
+    Solution::from(path.len() as u64 / 2)
+}
+
+pub fn part2(s: String) -> Solution {
+    part2_smart(s)
+}
+
+/// Mathematical optimization using shoelace formula and
+/// Pick's theoreme
+/// https://en.wikipedia.org/wiki/Shoelace_formula
+/// https://fr.wikipedia.org/wiki/Th%C3%A9or%C3%A8me_de_Pick
+fn part2_smart(s: String) -> Solution {
+    // TODO determine orientation
+    let (map, start) = parse(s);
+    let mut path = get_path(start, &map);
+
+    loop {
+        let mut area: i64 = 0;
+        for i in 0..path.len() {
+            area += (path[i].1 as i64 + path[(i + 1) % path.len()].1 as i64)
+                * (path[i].0 as i64 - path[(i + 1) % path.len()].0 as i64);
+        }
+
+        area /= 2;
+
+        let inside_points = area + 1 - (path.len() as i64 / 2);
+
+        if inside_points > 0 {
+            return Solution::from(inside_points);
+        }
+
+        path.reverse();
+    }
+}
+
+fn parse(s: String) -> InputType {
+    let mut start = (0, 0);
+
+    (
+        s.lines()
+            .enumerate()
+            .map(|(i, l)| {
+                l.chars()
+                    .enumerate()
+                    .map(|(j, c)| match c {
+                        '|' => Shape::Pipe(Dir::South, Dir::North),
+                        '-' => Shape::Pipe(Dir::East, Dir::West),
+                        'L' => Shape::Pipe(Dir::North, Dir::East),
+                        'J' => Shape::Pipe(Dir::North, Dir::West),
+                        'F' => Shape::Pipe(Dir::South, Dir::East),
+                        '7' => Shape::Pipe(Dir::South, Dir::West),
+                        '.' => Shape::Floor,
+                        'S' => {
+                            start = (i, j);
+                            Shape::Start
+                        }
+                        _ => panic!(),
+                    })
+                    .collect()
+            })
+            .collect(),
+        start,
+    )
+}
+
+#[allow(dead_code)]
 fn get_distances(start: (usize, usize), map: &Map) -> (HashMap<Pos, usize>, Shape) {
     let (starts_pos, starts_from_dirs, start_type) = get_start_pos(start, map);
     let mut distances: HashMap<Pos, usize> = HashMap::new();
@@ -149,16 +223,46 @@ fn get_distances(start: (usize, usize), map: &Map) -> (HashMap<Pos, usize>, Shap
     (distances, start_type)
 }
 
-pub fn part1(s: String) -> Solution {
-    let (map, start) = parse(s);
-    let (distances, _) = get_distances(start, &map);
+#[allow(dead_code)]
+fn propagate(mut pos: Pos, mut from_dir: Dir, map: &Map, distances: &mut HashMap<Pos, usize>) {
+    let mut i = 1;
+    let mut shape = map[pos.0][pos.1];
 
-    Solution::from(*distances.values().max().unwrap() as u64)
+    while shape != Shape::Start {
+        let entry = distances.entry(pos).or_insert(usize::MAX);
+        *entry = (*entry).min(i);
+
+        let next_dir = shape.get_other(&from_dir);
+
+        match next_dir {
+            Dir::North => {
+                pos.0 -= 1;
+                from_dir = Dir::South;
+            }
+            Dir::South => {
+                pos.0 += 1;
+                from_dir = Dir::North;
+            }
+            Dir::East => {
+                pos.1 += 1;
+                from_dir = Dir::West;
+            }
+            Dir::West => {
+                pos.1 -= 1;
+                from_dir = Dir::East;
+            }
+        }
+
+        shape = map[pos.0][pos.1];
+        i += 1;
+    }
 }
 
-pub fn part2(s: String) -> Solution {
+#[allow(dead_code)]
+fn part2_original(s: String) -> Solution {
     let (mut map, start) = parse(s);
     let (distances, start_type) = get_distances(start, &map);
+
     let (_, w) = (map.len(), map[0].len());
     map[start.0][start.1] = start_type;
 
@@ -198,34 +302,4 @@ pub fn part2(s: String) -> Solution {
     }
 
     Solution::from(inside_count)
-}
-
-fn parse(s: String) -> InputType {
-    let mut start = (0, 0);
-
-    (
-        s.lines()
-            .enumerate()
-            .map(|(i, l)| {
-                l.chars()
-                    .enumerate()
-                    .map(|(j, c)| match c {
-                        '|' => Shape::Pipe(Dir::South, Dir::North),
-                        '-' => Shape::Pipe(Dir::East, Dir::West),
-                        'L' => Shape::Pipe(Dir::North, Dir::East),
-                        'J' => Shape::Pipe(Dir::North, Dir::West),
-                        'F' => Shape::Pipe(Dir::South, Dir::East),
-                        '7' => Shape::Pipe(Dir::South, Dir::West),
-                        '.' => Shape::Floor,
-                        'S' => {
-                            start = (i, j);
-                            Shape::Start
-                        }
-                        _ => panic!(),
-                    })
-                    .collect()
-            })
-            .collect(),
-        start,
-    )
 }
