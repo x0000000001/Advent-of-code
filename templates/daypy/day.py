@@ -13,8 +13,8 @@ def parse(s):
     return None
 
 
-with open(sys.argv[1]) as f1:
-    s = f1.read().strip()
+with open(sys.argv[1]) as f:
+    s = f.read().strip()
 
 input = parse(s)
 f1(input)
