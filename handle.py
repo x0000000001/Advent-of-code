@@ -3,6 +3,7 @@ Handler to create and move aoc files.
 """
 
 import sys
+import requests
 import os
 import shutil
 from datetime import datetime
@@ -11,6 +12,7 @@ current_day_folder = "current_day/"
 if not os.path.exists(current_day_folder):
     os.mkdir(current_day_folder)
 
+token_name = "AOC_SESSION_ID"
 metadata_name = ".aoc_data"
 templates_folder = "templates/"
 accepted_languages = [s.split("/")[-1][3:] for s in os.listdir(templates_folder)]
@@ -19,6 +21,7 @@ Utility to create, edit, and save aoc days in this repository.
 
 Usage:
     - create <year> <day> <language> 
+    - create_current <language>
     - load <year> <day> <language>
     - save
 
@@ -40,9 +43,12 @@ def get_day_path(language, year, day):
 
 def rust_save_day(current_folder, year, day):
     lib_path = f"{current_folder}/src/lib.rs"
+    day_path = f"rust/src/year_{year}/day{day}.rs"
+    mod_path = f"rust/src/year_{year}/mod.rs"
+    input_folder = f"rust/data/year_{year}/day{day}/"
 
-    if os.path.exists(lib_path):
-        print(f"{lib_path} already exists, do you want to overwrite it ? (y/n)")
+    if os.path.exists(day_path):
+        print(f"{day_path} already exists, do you want to overwrite it ? (y/n)")
         answer = input()
         if answer != "y":
             print("Aborting.")
@@ -58,9 +64,7 @@ def rust_save_day(current_folder, year, day):
             or line.startswith("pub use helpers::Solution;")
         )
     ]
-    lines.insert(0, "use crate::Solution")
-    day_path = f"rust/src/year_{year}/day{day}.rs"
-    mod_path = f"rust/src/year_{year}/mod.rs"
+    lines.insert(0, "use crate::Solution;")
 
     with open(day_path, "w") as f:
         f.writelines(lines)
@@ -70,7 +74,15 @@ def rust_save_day(current_folder, year, day):
 
     if needs_day_mod:
         with open(mod_path, "a") as f:
-            f.write("\n\nmod day{day};\n")
+            f.write(f"\n\npub mod day{day};\n")
+
+    # input files
+    if not os.path.exists(input_folder):
+        os.makedirs(input_folder)
+
+    input_files = [f for f in os.listdir(current_folder) if "input" in f]
+    for input_file in input_files:
+        shutil.move(current_folder + input_file, input_folder)
 
     shutil.rmtree(current_folder)
     os.mkdir(current_folder)
@@ -90,7 +102,7 @@ def create_day(language, year, day):
 
 def save_day(current_folder):
     with open(current_folder + metadata_name, "r") as f:
-        year, day, language = f.readlines().strip()
+        year, day, language = [s.strip("\n") for s in f.readlines()]
 
     if language == "rust":
         rust_save_day(current_folder, year, day)
@@ -103,6 +115,7 @@ def save_day(current_folder):
         if answer != "y":
             print("Aborting.")
             return
+        shutil.rmtree(day_path)
 
     os.remove(current_folder + metadata_name)
     shutil.move(current_folder, day_path)
@@ -146,12 +159,16 @@ def does_day_exists(language, year, day):
 def load_day(language, year, day):
     if language == "rust":
         rust_load_day(year, day)
+    else:
+        day_path = get_day_path(language, year, day)
+        if not os.path.exists(day_path):
+            raise Exception(f"Folder {day_path} doesn't exists, aborting.")
 
-    day_path = get_day_path(language, year, day)
-    if not os.path.exists(day_path):
-        raise Exception(f"Folder {day_path} doesn't exists, aborting.")
+        shutil.copytree(day_path, current_day_folder, dirs_exist_ok=True)
 
-    shutil.copytree(day_path, current_day_folder)
+    metadata_file = current_day_folder + metadata_name
+    with open(metadata_file, "w") as f:
+        f.write(f"{year}\n{day}\n{language}\n")
 
 
 def rust_load_day(year, day):
@@ -170,7 +187,9 @@ def rust_load_day(year, day):
     os.remove(current_day_folder + "test_input0.txt")
     with open(current_day_folder + "src/lib.rs", "w") as f:
         f.writelines(lines)
-    shutil.copytree(input_folder_path, current_day_folder)
+
+    for input_file in os.listdir(input_folder_path):
+        shutil.copy(input_folder_path + input_file, current_day_folder)
 
 
 def assert_edit_folder_empty():
@@ -247,6 +266,41 @@ def command_save():
     save_day(current_day_folder)
 
 
+def getEnvironmentVariable(name):
+    try:
+        return os.environ[name]
+    except KeyError:
+        print("Please set your " + name + " environment variable.")
+        print("On Windows, run:")
+        print("setx " + name + " <your session id>")
+        print("On Linux, run:")
+        print("export " + name + " <your session id>")
+        print("Then restart your terminal/editor.")
+        exit()
+
+
+def command_create_current():
+    language = sys.argv[2]
+
+    if language not in accepted_languages:
+        print(f"{language} is not accepted")
+        return
+
+    token = getEnvironmentVariable(token_name)
+
+    day = f"{datetime.now().day}"
+    day = day.zfill(2)
+
+    create_day(language, datetime.now().year, day)
+    input_file = current_day_folder + "input.txt"
+
+    with open(input_file, "w") as f:
+        url = "https://adventofcode.com/2023/day/" + str(day) + "/input"
+        cookies = {"session": token}
+        r = requests.get(url, cookies=cookies)
+        f.write(r.text)
+
+
 if __name__ == "__main__":
     match sys.argv[1]:
         case "create":
@@ -255,6 +309,8 @@ if __name__ == "__main__":
             command_load()
         case "save":
             command_save()
+        case "create_current":
+            command_create_current()
         case _:
             print(help)
 
