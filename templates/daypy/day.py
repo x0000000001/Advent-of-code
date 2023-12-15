@@ -1,5 +1,5 @@
 import sys
-import pprint
+from pprint import pprint
 
 
 def f1(input):
