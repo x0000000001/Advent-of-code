@@ -8,6 +8,7 @@ import os
 import shutil
 from datetime import datetime
 
+
 current_day_folder = "current_day/"
 if not os.path.exists(current_day_folder):
     os.mkdir(current_day_folder)
@@ -21,7 +22,7 @@ Utility to create, edit, and save aoc days in this repository.
 
 Usage:
     - create <year> <day> <language> 
-    - create_current <language>
+    - today <language>
     - load <year> <day> <language>
     - save
 
@@ -279,7 +280,7 @@ def getEnvironmentVariable(name):
         exit()
 
 
-def command_create_current():
+def command_today():
     language = sys.argv[2]
 
     if language not in accepted_languages:
@@ -301,7 +302,11 @@ def command_create_current():
         f.write(r.text)
 
 
-if __name__ == "__main__":
+def main():
+    if len(sys.argv) < 2:
+        print(help_string)
+        return
+
     match sys.argv[1]:
         case "create":
             command_create()
@@ -309,9 +314,11 @@ if __name__ == "__main__":
             command_load()
         case "save":
             command_save()
-        case "create_current":
-            command_create_current()
+        case "today":
+            command_today()
         case _:
             print(help)
 
-# TODO command create_today with automatic input fetch
+
+if __name__ == "__main__":
+    main()
