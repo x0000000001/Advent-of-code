@@ -1,0 +1,227 @@
+digraph G {
+	node [shape=circle]
+	hm
+	node [shape=circle]
+	ph
+	node [shape=circle]
+	xs
+	node [shape=circle]
+	xc
+	node [shape=circle]
+	fx
+	node [shape=circle]
+	dn
+	node [shape=circle]
+	nd
+	node [shape=circle]
+	pd
+	node [shape=circle]
+	pc
+	node [shape=circle]
+	lx
+	node [shape=circle]
+	tc
+	node [shape=circle]
+	tl
+	node [shape=circle]
+	kk
+	node [shape=circle]
+	gq
+	node [shape=circle]
+	xq
+	node [shape=circle]
+	nn
+	node [shape=square]
+	st
+	node [shape=square]
+	hb
+	node [shape=circle]
+	xj
+	node [shape=circle]
+	sz
+	node [shape=circle]
+	bz
+	node [shape=circle]
+	vq
+	node [shape=circle]
+	vv
+	node [shape=circle]
+	gp
+	node [shape=square]
+	js
+	node [shape=circle]
+	lf
+	node [shape=doublecircle]
+	broadcaster
+	node [shape=circle]
+	cd
+	node [shape=circle]
+	vr
+	node [shape=circle]
+	kx
+	node [shape=circle]
+	jr
+	node [shape=square]
+	gr
+	node [shape=circle]
+	qg
+	node [shape=circle]
+	mc
+	node [shape=circle]
+	nl
+	node [shape=circle]
+	hz
+	node [shape=circle]
+	kt
+	node [shape=circle]
+	zc
+	node [shape=circle]
+	vj
+	node [shape=square]
+	zb
+	node [shape=circle]
+	kc
+	node [shape=circle]
+	qc
+	node [shape=square]
+	bn
+	node [shape=circle]
+	cz
+	node [shape=square]
+	bs
+	node [shape=circle]
+	jc
+	node [shape=circle]
+	nj
+	node [shape=circle]
+	kj
+	node [shape=circle]
+	hh
+	node [shape=circle]
+	hq
+	node [shape=circle]
+	dh
+	node [shape=circle]
+	ch
+	node [shape=circle]
+	jv
+	node [shape=circle]
+	rs
+	node [shape=circle]
+	zf
+	node [shape=circle]
+	qn
+	node [shape=square]
+	lg
+	node [shape=square]
+	rr
+	hm -> lg
+	ph -> gr
+	ph -> cd
+	xs -> st
+	xs -> zf
+	xc -> vv
+	xc -> bn
+	fx -> lx
+	fx -> st
+	dn -> zc
+	nd -> lg
+	nd -> tc
+	pd -> dn
+	pd -> lg
+	pc -> gr
+	lx -> gp
+	tc -> kj
+	tl -> nn
+	kk -> xs
+	gq -> pd
+	xq -> st
+	xq -> xj
+	nn -> bn
+	nn -> xc
+	st -> kk
+	st -> fx
+	st -> hz
+	st -> lx
+	st -> zb
+	hb -> rx
+	xj -> st
+	xj -> vq
+	sz -> gr
+	sz -> ph
+	bz -> kx
+	vq -> st
+	vv -> hh
+	vv -> bn
+	gp -> st
+	gp -> hz
+	js -> hb
+	lf -> bn
+	lf -> qg
+	broadcaster -> nd
+	broadcaster -> fx
+	broadcaster -> mc
+	broadcaster -> lf
+	cd -> vr
+	vr -> qc
+	vr -> gr
+	kx -> kc
+	kx -> lg
+	jr -> bn
+	jr -> tl
+	gr -> cz
+	gr -> dh
+	gr -> mc
+	gr -> qc
+	gr -> js
+	gr -> nj
+	gr -> cd
+	qg -> hq
+	mc -> gr
+	mc -> cz
+	nl -> st
+	nl -> ch
+	hz -> nl
+	kt -> gr
+	kt -> jc
+	zc -> lg
+	zc -> qn
+	vj -> rs
+	zb -> hb
+	kc -> gq
+	qc -> kt
+	bn -> qg
+	bn -> hq
+	bn -> rs
+	bn -> lf
+	bn -> bs
+	bn -> vj
+	bn -> tl
+	cz -> dh
+	bs -> hb
+	jc -> gr
+	jc -> pc
+	nj -> sz
+	kj -> lg
+	kj -> bz
+	hh -> jv
+	hh -> bn
+	hq -> vj
+	dh -> nj
+	ch -> st
+	ch -> kk
+	jv -> bn
+	rs -> jr
+	zf -> xq
+	zf -> st
+	qn -> hm
+	qn -> lg
+	lg -> gq
+	lg -> bz
+	lg -> tc
+	lg -> nd
+	lg -> rr
+	lg -> kc
+	lg -> dn
+	rr -> hb
+}
