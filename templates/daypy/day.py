@@ -1,6 +1,8 @@
 import sys
 from pprint import pprint
 
+s = open(sys.argv[1]).read().strip()
+
 
 def f1(input):
     pass
@@ -13,9 +15,6 @@ def f2(input):
 def parse(s):
     return None
 
-
-with open(sys.argv[1]) as f:
-    s = f.read().strip()
 
 input = parse(s)
 print(f1(input))
