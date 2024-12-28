@@ -39,7 +39,7 @@ pub enum Solution {
     NotFound,
 
     /// For a solution that is not yet implemented.\
-    /// This is particulary usefull part1 is being implemented, but part2 isn't yet.
+    /// This is particularly useful when part1 is being implemented, but part2 isn't yet.
     NotImplemented,
 
     Day25Part2,

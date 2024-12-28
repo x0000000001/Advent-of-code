@@ -16,3 +16,4 @@ md5 = "0.7.0"
 colorize = "0.1.0"
 itertools = "0.11.0"
 num-integer = "0.1.45"                              # for 2019_12
+clap = { version = "4.0", features = ["derive"] }
