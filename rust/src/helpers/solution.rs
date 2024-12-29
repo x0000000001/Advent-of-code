@@ -60,11 +60,11 @@ impl From<String> for Solution {
 impl Display for Solution {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Solution::Num(x) => write!(f, "{x}"),
-            Solution::String(s) => write!(f, "{s}"),
-            Solution::NotFound => write!(f, "Not found"),
-            Solution::NotImplemented => write!(f, "Not implemented yet"),
-            Solution::Day25Part2 => write!(f, "-"),
+            Solution::Num(x) => x.fmt(f),
+            Solution::String(s) => s.fmt(f),
+            Solution::NotFound => "Not found".fmt(f),
+            Solution::NotImplemented => "Not implemented yet".fmt(f),
+            Solution::Day25Part2 => "-".fmt(f),
         }
     }
 }

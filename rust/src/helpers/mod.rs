@@ -1,10 +1,11 @@
 use std::time::{Duration, Instant};
 
 mod aoc_day;
-mod path;
+mod input;
 mod solution;
 
 pub use aoc_day::{AocDay, AocImplementation, DayExecutionResult, OutputType};
+pub use input::Input;
 pub use solution::Solution;
 
 /// Type of an aoc solving function.

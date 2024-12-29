@@ -1,10 +1,14 @@
-use aoc::{DayExecutionResult, Solution, DAYS};
+use aoc::{helpers::Input, AocDay, DayExecutionResult, DAYS};
 use clap::{Parser, Subcommand};
+use colored::Colorize;
 use colorize::global_fg;
-use std::time::Duration;
+use itertools::Itertools;
+use std::{cmp::Ordering, time::Duration};
 
 const FIRST_YEAR: usize = 2015;
 const LAST_YEAR: usize = 2024;
+
+const USER: &'static str = "AntoineMines";
 
 #[derive(Parser)]
 #[command(
@@ -32,195 +36,144 @@ enum Command {
     TestAll { year: usize, day: usize },
     /// Execute every day of a given year (only execution time)
     Year { year: usize },
+    /// Execute all days
+    All,
 }
 
 fn main() {
     let cli = Cli::parse();
 
-    match &cli.command {
-        Command::Day { year, day } => day_command(*year, *day),
-        Command::Test { year, day, test_id } => test(*year, *day, *test_id),
-        Command::TestAll { year, day } => test_all(*year, *day),
-        Command::Year { year } => year_command(*year),
-    }
-}
-
-fn format_day_key(year: usize, day: usize) -> String {
-    format!("{}_{}", year, format!("{:02}", day))
-}
-
-fn print_line((sol, duration): (Solution, Duration), name: &str) {
-    match sol {
-        Solution::Num(_) | Solution::String(_) | Solution::NotFound => println!(
-            "{name} -> {sol} {}, {:.2?}",
-            " ".repeat(20 - sol.to_string().len()),
-            duration
-        ),
-        Solution::NotImplemented | Solution::Day25Part2 => println!("{}", sol),
-    }
-}
-
-fn day_command(year: usize, day: usize) {
-    let name = format_day_key(year, day);
-
-    if let Some(day) = DAYS.get(&name) {
-        println!("--- {} ---", name);
-        match day.solve() {
-            DayExecutionResult::Success(result1, result2) => {
-                print_line(result1, "part 1");
-                print_line(result2, "part 2");
-            }
-            DayExecutionResult::ImplementationError(implementation) => println!("{implementation}"),
-            DayExecutionResult::FileReadingError(s_err) => {
-                println!("Looks like there is no input for this file : {s_err}")
-            }
-        }
-    } else {
-        println!("Can't find day {}.", name);
-    }
-}
-
-fn test(year: usize, day: usize, test_id: usize) {
-    let name = format_day_key(year, day);
-
-    if let Some(day) = DAYS.get(&name) {
-        println!("--- {}  | test {} ---", name, test_id);
-        match day.solve_test(test_id) {
-            DayExecutionResult::Success(result1, result2) => {
-                print_line(result1, "part 1");
-                print_line(result2, "part 2");
-            }
-            DayExecutionResult::ImplementationError(implementation) => println!("{implementation}"),
-            DayExecutionResult::FileReadingError(s_err) => {
-                println!(
-                    "Looks like there is no test input with id {test_id} for day {name} : {s_err}"
-                )
-            }
-        }
-    } else {
-        println!("Can't find day {}.", name);
-    }
-}
-
-fn test_all(year: usize, day: usize) {
-    let name = format_day_key(year, day);
-
-    if let Some(day) = DAYS.get(&name) {
-        let execution_results = day.solve_all_tests();
-        if execution_results.is_empty() {
-            println!("There isn't any test for day {}.", day.name);
-        } else {
-            for (test_id, execution_result) in execution_results.into_iter().enumerate() {
-                println!("--- {}  | test {} ---", name, test_id);
-                match execution_result {
-                    DayExecutionResult::Success(result1, result2) => {
-                        print_line(result1, "part 1");
-                        print_line(result2, "part 2");
-                    }
-                    DayExecutionResult::ImplementationError(implementation) => {
-                        println!("{implementation}")
-                    }
-                    DayExecutionResult::FileReadingError(s_err) => {
-                        println!("Looks like there is no test input with id {test_id} for day {name} : {s_err}")
-                    }
+    run_jobs(
+        &DAYS
+            .iter()
+            .filter(|d| match &cli.command {
+                &Command::Day { year, day }
+                | &Command::TestAll { year, day }
+                | &Command::Test {
+                    year,
+                    day,
+                    test_id: _,
+                } => d.year == year && d.day == day,
+                &Command::Year { year } => d.year == year,
+                Command::All => true,
+            })
+            .flat_map(|&d| match &cli.command {
+                Command::Day { year: _, day: _ } | Command::Year { year: _ } | Command::All => {
+                    vec![(
+                        d.clone(),
+                        Input {
+                            user: USER,
+                            test_id: None,
+                        },
+                    )]
                 }
-                println!();
-            }
-        }
+                &Command::Test {
+                    year: _,
+                    day: _,
+                    test_id,
+                } => vec![(
+                    d.clone(),
+                    Input {
+                        user: USER,
+                        test_id: Some(test_id),
+                    },
+                )],
+                Command::TestAll { year: _, day: _ } => Input::get_all(USER, d)
+                    .into_iter()
+                    .map(|i| (d.clone(), i))
+                    .collect(),
+            })
+            .collect(),
+    );
+}
+
+fn time_color(duration: Duration) -> &'static str {
+    if duration < Duration::from_millis(1) {
+        "green"
+    } else if duration < Duration::from_millis(100) {
+        "yellow"
     } else {
-        println!("Can't find day {}.", name);
+        "red"
     }
 }
 
-fn year_command(year: usize) {
-    if year < FIRST_YEAR {
-        println!("AOC starts in {}. Year {} doesn't exist.", FIRST_YEAR, year);
-        return;
-    } else if year > LAST_YEAR {
-        println!(
-            "AOC currently stops at year {}. Year {} doesn't exist yet :)",
-            LAST_YEAR, year
-        );
-        return;
-    }
+/// Computes and displays results for requested jobs.
+///
+/// # Arguments
+///
+/// * `jobs` - Pairs of (day, Option<test_id>). If no test id is specified, the
+fn run_jobs(jobs: &Vec<(AocDay, Input)>) {
+    for (day, _) in jobs.iter() {
+        let year = day.year;
 
-    let days_of_year: Vec<&aoc::AocDay> = DAYS
-        .keys()
-        .filter(|k| k.starts_with(&year.to_string()))
-        .filter_map(|k| DAYS.get(k))
-        .collect();
-
-    if days_of_year.is_empty() {
-        println!("There are no days here for year {}. Sorry !", year);
-        return;
+        if year < FIRST_YEAR {
+            println!("AOC starts in {}. Year {} doesn't exist.", FIRST_YEAR, year);
+            return;
+        } else if year > LAST_YEAR {
+            println!(
+                "AOC currently stops at year {}. Year {} doesn't exist yet :)",
+                LAST_YEAR, year
+            );
+            return;
+        }
     }
 
     println!(
-        "{}{}{}{}",
-        " ".repeat(11),
-        "Part 1",
-        " ".repeat(18),
-        "Part 2"
+        "{:15} || {:30} | {:30} || {:30} | {:30}",
+        " ", "Part 1", "", "Part 2", ""
     );
-    println!("{}", "-".repeat(53));
+    println!(
+        "{:15} || {:30} | {:30} || {:30} | {:30}",
+        " ", "Time", "Result", "Time", "Result"
+    );
+    println!("{}", "=".repeat(149));
 
-    for day in days_of_year {
-        print_one_line_day(day.solve(), &day.name);
+    let mut current_year = None;
+
+    for (day, input) in jobs.iter().sorted_by(|(day0, input0), (day1, input1)| {
+        // sort by year, then by day, then by test_id
+        day0.year.cmp(&day1.year).then(day0.day.cmp(&day1.day).then(
+            match (input0.test_id, input1.test_id) {
+                (Some(_), None) => Ordering::Greater,
+                (None, Some(_)) => Ordering::Less,
+                (None, None) => Ordering::Equal,
+                (Some(a), Some(b)) => a.cmp(&b),
+            },
+        ))
+    }) {
+        if current_year.is_none_or(|y| y != day.year) {
+            current_year = Some(day.year);
+            println!("{:-^149}", day.year.to_string());
+        }
+
+        print_one_line_day(day, &day.solve(input));
     }
 }
 
-fn print_one_line_day(day_result: DayExecutionResult, day_name: &str) {
-    print!("{} || ", day_name);
-
-    let print_time = |(sol, duration): (Solution, Duration)| {
-        let s = match sol {
-            Solution::Num(_) | Solution::String(_) | Solution::NotFound => {
-                format!("{:.0?}", duration)
-            }
-            Solution::NotImplemented | Solution::Day25Part2 => {
-                format!("{}", sol)
-            }
-        };
-
-        let color = if duration < Duration::from_millis(10) {
-            colorize::Color::BrightGreen
-        } else if duration < Duration::from_millis(100) {
-            colorize::Color::Green
-        } else if duration < Duration::from_millis(500) {
-            colorize::Color::Yellow
-        } else if duration < Duration::from_millis(1000) {
-            colorize::Color::Magenta
-        } else {
-            colorize::Color::Red
-        };
-
-        global_fg(color);
-
-        print!(
-            "{}{}",
-            s,
-            " ".repeat(
-                (20 + if duration < Duration::from_millis(1) {
-                    1
-                } else {
-                    0
-                }) - s.len()
-            )
-        );
-
-        global_fg(colorize::Color::Default);
-    };
+fn print_one_line_day(day: &AocDay, day_result: &DayExecutionResult) {
+    let name = format!("{} {}", day.year, day.day);
 
     match day_result {
-        DayExecutionResult::Success(result1, result2) => {
-            print_time(result1);
-            print!("|| ");
-            print_time(result2);
-            println!();
+        DayExecutionResult::Success((sol0, duration0), (sol1, duration1)) => {
+            global_fg(colorize::Color::Red);
+            println!(
+                "{:15} || {:30} | {:30} || {:30} | {:30}",
+                name,
+                format!("{:.0?}", duration0).color(time_color(*duration0)),
+                sol0,
+                format!("{:.0?}", duration1).color(time_color(*duration1)),
+                sol1
+            );
         }
-        DayExecutionResult::ImplementationError(implementation) => println!("{implementation}"),
+        DayExecutionResult::ImplementationError(implementation) => println!(
+            "{:15} || {:30} | {:30} || {:30} | {:30}",
+            name, implementation, "-", "-", "-"
+        ),
         DayExecutionResult::FileReadingError(_) => {
-            println!("no input")
+            println!(
+                "{:15} || {:30} | {:30} || {:30} | {:30}",
+                name, "no input", "-", "-", "-"
+            );
         }
     }
 }
