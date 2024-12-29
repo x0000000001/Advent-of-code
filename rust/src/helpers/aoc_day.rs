@@ -2,12 +2,12 @@ use std::fmt::Display;
 use std::time::Duration;
 
 use super::ex_function;
-use super::path::{get_input_paths, get_path};
+use super::input::Input;
 use super::solution::Solution;
 use super::SolFuncType;
 
 /// Wrapper to represent an aoc day solution.
-#[derive(Clone)]
+#[derive(Hash, Clone)]
 pub enum AocImplementation {
     /// Day implemented in Rust, containing part 1 and part 2 functions.
     Some(SolFuncType, SolFuncType),
@@ -19,22 +19,21 @@ pub enum AocImplementation {
 impl Display for AocImplementation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AocImplementation::Some(_, _) => {
-                write!(f, "")
-            }
-            AocImplementation::ImplementedInOtherLanguage(Some(name)) => {
-                write!(f, "Implemented in {name}.")
-            }
-            AocImplementation::ImplementedInOtherLanguage(None) => {
-                write!(f, "Implemented in another unknown language.")
-            }
-            AocImplementation::NotImplementedYet => write!(f, "Not implemented yet."),
+            AocImplementation::Some(_, _) => "".fmt(f),
+            AocImplementation::ImplementedInOtherLanguage(language) => format!(
+                "Implemented in {}.",
+                if let Some(name) = language { name } else { "?" }
+            )
+            .fmt(f),
+            AocImplementation::NotImplementedYet => "Not implemented yet.".fmt(f),
         }
     }
 }
 
+#[derive(Hash, Clone)]
 pub struct AocDay {
-    pub name: &'static str,
+    pub year: usize,
+    pub day: usize,
     pub implementation: AocImplementation,
 }
 
@@ -54,14 +53,14 @@ pub enum DayExecutionResult {
 }
 
 impl AocDay {
-    pub fn test_input(&self, part: usize, test_id: usize, expected_result: Solution) {
+    pub fn test_input(&self, part: usize, input: &Input, expected_result: Solution) {
         if let AocImplementation::Some(part1, part2) = self.implementation {
-            let path = get_path(self.name, Some(test_id));
+            let path = input.path(self);
 
             let input_string = match std::fs::read_to_string(path.clone()) {
                 Ok(s) => s,
                 Err(err) => {
-                    panic!("Problem reading file {path} for test input {test_id} : {err}");
+                    panic!("Problem reading file {path} : {err}",);
                 }
             };
 
@@ -79,12 +78,15 @@ impl AocDay {
                 expected_result, result
             );
         } else {
-            panic!("Problem testing {} : {}", self.name, self.implementation);
+            panic!(
+                "Problem testing day {} {}: {}",
+                self.year, self.day, self.implementation
+            );
         }
     }
 
-    pub fn solve_path(&self, path: &str) -> DayExecutionResult {
-        let input_string = match std::fs::read_to_string(path) {
+    pub fn solve(&self, input: &Input) -> DayExecutionResult {
+        let input_string = match std::fs::read_to_string(input.path(self)) {
             Ok(s) => s,
             Err(err) => {
                 return DayExecutionResult::FileReadingError(format!("{err}"));
@@ -103,20 +105,16 @@ impl AocDay {
         }
     }
 
-    pub fn solve(&self) -> DayExecutionResult {
-        let path = get_path(self.name, None);
-        self.solve_path(&path)
-    }
-
-    pub fn solve_test(&self, test_id: usize) -> DayExecutionResult {
-        let path = get_path(self.name, Some(test_id));
-        self.solve_path(&path)
-    }
-
-    pub fn solve_all_tests(&self) -> Vec<DayExecutionResult> {
-        get_input_paths(self.name)
+    pub fn solve_tests(&self, user: &'static str) -> Vec<DayExecutionResult> {
+        Input::get_all(user, self)
             .into_iter()
-            .map(|p| self.solve_path(&p))
+            .filter_map(|p| {
+                if p.test_id.is_none() {
+                    None
+                } else {
+                    Some(self.solve(&p))
+                }
+            })
             .collect()
     }
 }
