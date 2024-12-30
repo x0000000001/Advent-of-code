@@ -9,6 +9,7 @@ const FIRST_YEAR: usize = 2015;
 const LAST_YEAR: usize = 2024;
 
 const USER: &'static str = "AntoineMines";
+// const USER: &'static str = "Antoine";
 
 #[derive(Parser)]
 #[command(
